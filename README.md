@@ -3,10 +3,10 @@ flip-flap
 
 Description
 --
-This project consist to develop a virtual flip flap display which can be added into a web page and displayed into webgl enabled browsers. This kind of displays may be seen on train stations and airport. 
-This is a totally personal project to practice and apply what I learnt from [learning webgl](http://learningwebgl.com/blog/ "Learning WebGL") and the Functional Inherithance Pattern from D. Crockford's book : Javascript : The Good parts.
+This project consists in developing a virtual flip flap display which can be added into a web page and displayed into webgl enabled browsers. This kind of displays may be seen on train stations and airports. 
+This is a totally personal project to practice and apply what I learnt from [learning webgl](http://learningwebgl.com/blog/ "Learning WebGL") and the Functional Inherithance Pattern from D. Crockford's book,  Javascript : The Good parts.
 
-A similar project has been developed by Spite and is describe [here](http://www.clicktorelease.com/blog/split-flap-display). Nevertheless, this project is based on CSS3D and is not related with mine.
+A similar project has been developed by Spite and is described [here](http://www.clicktorelease.com/blog/split-flap-display). Nevertheless, this project is based on CSS3D and is not related to mine.
 
 
 Constraints
