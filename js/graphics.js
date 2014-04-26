@@ -15,51 +15,65 @@ define(["glMatrix"], function(glMatrix) {
      * @returns {undefined}
      */
     var graphics = function(spec, my) {
-        
+
         /*
          * Private members 
          */
-        var that = {}, gl, pMatrix, mvMatrix, drawList, udpateList;
+        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList, udpateList;
         my = my || {};
-        
+
         /*
          * Intern init
          */
-        try{
+        try {
             //setting webgl object
             gl = spec.canvas.getContext("experimental-weblg");
             gl.width = spec.canvas.width;
             gl.height = spec.canvas.height;
-            
+
             //setting perspective params
             spec.fov = spec.fov || 45;
             spec.near = spec.near || 0.1;
             spec.far = spec.far || 100;
             pMatrix = glMatrix.mat4.create();
-            glMatrix.mat4.perspective(pMatrix, spec.fov, gl.width / gl.height, spec.near, spec.far );
-            
+            glMatrix.mat4.perspective(pMatrix, spec.fov, gl.width / gl.height, spec.near, spec.far);
+
             //setting mv matrix to identity
             mvMatrix = glMatrix.mat4.create();
+            mvMatrixStack = [];
         }
-        catch(e){
-            if (!gl){
-                throw Exception("Could not initialise WebGL, sorry :-(");
+        catch (e) {
+            if (!gl) {
+                throw "Could not initialise WebGL, sorry :-(";
             }
             else {
                 throw e;
             }
         }
 
-        function drawScene(){
-            
-        }
+        function drawScene() {
+            var i, drawsCount = drawList.length;
 
-        function update(){
             gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            //synchronous call to avoid concurrent access on mvMatrix
+            for (i = 0; i < drawsCount; i++) {
+                drawList[i]();
+            }
         }
 
-        function render(){
+
+        function update() {
+
+            //updates may be called assynchronously
+            udpateList.forEach(function(update) {
+                update();
+            });
+
+        }
+
+        function render() {
             requestAnimFram(render);
             drawScene();
             update();
@@ -68,13 +82,74 @@ define(["glMatrix"], function(glMatrix) {
         /*
          * Public interface
          */
+
+        /**
+         * 
+         * @returns {undefined}
+         */
         function run() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.enable(gl.DEPTH_TEST);
+            render();
         }
-                      
+
+        /**
+         * 
+         * @returns {undefined}
+         */
+        function mvMatrixPush() {
+            var copy = glMatrix.mat4.create();
+            glMatrix.mat4.copy(mvMatrix, copy);
+            mvMatrixStack.push(copy);
+        }
+
+        /**
+         * 
+         * @returns {undefined}
+         */
+        function mvMatrixPop() {
+            if (mvMatrixStack.length === 0) {
+                throw "Invalid popMatrix!";
+            }
+            mvMatrix = mvMatrixStack.pop();
+        }
+
+        /**
+         * 
+         * @param {type} shaderProgram
+         * @returns {undefined}
+         */
+        function applyTransforms(shaderProgram) {
+            gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+            gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+        }
+
+        /**
+         * 
+         * @param {type} drawCallBack
+         * @returns {undefined}
+         */
+        function addDraw(drawCallBack) {
+            drawList.push(drawCallBack);
+        }
+       
+        /**
+         * 
+         * @param {type} updateCallback
+         * @returns {undefined}
+         */
+        function addUpdate(updateCallback) {
+            udpateList.push(updateCallback);
+        }
+
         that.run = run;
-        that.addShader = addShader;
+        that.mvMatrixPush = mvMatrixPush;
+        that.mvMatrixPop = mvMatrixPop;
+        that.applyTransforms = applyTransforms;
+        that.addDraw = addDraw;
+        that.addUpdate = addUpdate;
+
+        that.gl = gl;
 
         return that;
 
