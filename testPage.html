@@ -15,7 +15,12 @@ and open the template in the editor.
         <script src="js/require.js"></script>
         <script>
             require.config({
-               baseUrl: "js" 
+               baseUrl: "js",
+               shim: {
+                   'gl-matrix-min' : {
+                       export: "glMatrix"
+                   }
+               }
             });
             
             require(["flipFlap"], function(flipFlap){
