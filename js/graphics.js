@@ -30,7 +30,8 @@ define(["glmatrix"], function(glMatrix) {
             gl = spec.canvas.getContext("experimental-webgl");
             gl.width = spec.canvas.width;
             gl.height = spec.canvas.height;
-
+            that.gl = gl;
+            
             //setting perspective params
             spec.fov = spec.fov || 45;
             spec.near = spec.near || 0.1;
@@ -83,10 +84,6 @@ define(["glmatrix"], function(glMatrix) {
          * Public interface
          */
         
-        var public = {
-            
-        };
-        
         /**
          * 
          * @returns {undefined}
@@ -96,7 +93,8 @@ define(["glmatrix"], function(glMatrix) {
             gl.enable(gl.DEPTH_TEST);
             render();
         }
-
+        that.run = run;
+        
         /**
          * 
          * @returns {undefined}
@@ -104,7 +102,8 @@ define(["glmatrix"], function(glMatrix) {
         function mvMatrixToIdentity(){
             glMatrix.mat4.identity(mvMatrix);
         }
-
+        that.mvMatrixToIdentity = mvMatrixToIdentity;
+        
         /**
          * 
          * @returns {undefined}
@@ -114,7 +113,8 @@ define(["glmatrix"], function(glMatrix) {
             glMatrix.mat4.copy(copy, mvMatrix);
             mvMatrixStack.push(copy);
         }
-
+        that.mvMatrixPush = mvMatrixPush;
+        
         /**
          * 
          * @returns {undefined}
@@ -125,6 +125,7 @@ define(["glmatrix"], function(glMatrix) {
             }
             mvMatrix = mvMatrixStack.pop();
         }
+        that.mvMatrixPop = mvMatrixPop;
         
         /**
          * 
@@ -134,6 +135,7 @@ define(["glmatrix"], function(glMatrix) {
         function mvTranslate(v3){
             glMatrix.mat4.translate(mvMatrix,mvMatrix, v3);
         }
+        that.mvTranslate = mvTranslate;
         
         /**
          * 
@@ -144,6 +146,7 @@ define(["glmatrix"], function(glMatrix) {
         function mvRotate(v3, angle){
             glMatrix.mat4.rotate(mvMatrix, mvMatrix, angle, v3);
         }
+        that.mvRotate = mvRotate;
         
         /**
          * 
@@ -154,7 +157,8 @@ define(["glmatrix"], function(glMatrix) {
             gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
             gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
         }
-
+        that.applyTransforms = applyTransforms;
+        
         /**
          * 
          * @param {type} drawCallBack
@@ -163,7 +167,8 @@ define(["glmatrix"], function(glMatrix) {
         function addDraw(drawCallBack) {
             drawList.push(drawCallBack);
         }
-       
+        that.addDraw = addDraw;
+        
         /**
          * 
          * @param {type} updateCallback
@@ -172,19 +177,7 @@ define(["glmatrix"], function(glMatrix) {
         function addUpdate(updateCallback) {
             udpateList.push(updateCallback);
         }
-        
-        that.run = run;
-        that.mvMatrixToIdentity = mvMatrixToIdentity;
-        that.mvMatrixPush = mvMatrixPush;
-        that.mvMatrixPop = mvMatrixPop;
-        that.mvTranslate = mvTranslate;
-        that.mvRotate = mvRotate;
-        that.applyTransforms = applyTransforms;
-        that.addDraw = addDraw;
         that.addUpdate = addUpdate;
-
-        that.gl = gl;
-        that.mvMatrix = mvMatrix;
 
         return that;
 
