@@ -2,7 +2,7 @@
  * 
  * @returns {undefined}
  */
-define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "glMatrix"], function(fs, vs, glMatrix) {
+define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "glmatrix"], function(fs, vs, glMatrix) {
 
     /**
      * 
@@ -15,12 +15,12 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         /*
          * Private members 
          */
-        var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, vertexColorBuffer, gl;
+        var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, vertexColorBuffer, gl,
+                lastTime, xRot, graphics, PI2;
         my = my || {};
 
-        function compileShader(shader, str, shaderType) {
-            shader = gl.createShader(shaderType);
-            gl.shaderSource(str);
+        function compileShader(shader, str) {
+            gl.shaderSource(shader, str);
             gl.compileShader(shader);
 
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -30,10 +30,10 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
 
         function initShaders() {
 
-            gl = spec.graphics.gl;
-
-            compileShader(vsShader, vs, gl.VERTEX_SHADER);
-            compileShader(fsShader, fs, gl.FRAGMENT_SHADER);
+            vsShader = gl.createShader(gl.VERTEX_SHADER);
+            compileShader(vsShader, vs);
+            fsShader = gl.createShader(gl.FRAGMENT_SHADER);
+            compileShader(fsShader, fs);
             shaderProgram = gl.createProgram();
             gl.attachShader(shaderProgram, vsShader);
             gl.attachShader(shaderProgram, fsShader);
@@ -88,36 +88,45 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         }
 
         function draw() {
-            spec.graphics.mvMatrixPush();
-            spec.graphics.mvMatrixToIdentity();
-
+            graphics.mvMatrixPush();
+            graphics.mvMatrixToIdentity();
+            graphics.mvTranslate([0., 0., -7.]);
+            graphics.mvRotate([1., 0., 0.], xRot);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, vertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-            spec.graphics.applyTransforms();
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.itemSize);
-            
-            spec.graphics.mvMatrixPop();
+            graphics.applyTransforms(shaderProgram);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
+
+            graphics.mvMatrixPop();
 
         }
 
         function update() {
-            
+            var timeNow = new Date().getTime();
+            if (lastTime !== 0) {
+                var elapsed = timeNow - lastTime;
+                xRot = (xRot + (1.3 * elapsed) / 1000.0)%PI2;
+            }
+            lastTime = timeNow;
         }
 
         /*
          * Intern init
          */
         try {
-
-            gl = spec.graphics.gl;
+            graphics = spec.graphics;
+            gl = graphics.gl;
+            lastTime = 0;
+            xRot = 0;
+            PI2 = Math.PI*2;
             initShaders(); //Shaders intialisation
             initBuffers(); //Buffers initialisation
-            spec.graphics.addDraw(draw);
-            spec.graphics.addUpdate(update);
+            graphics.addDraw(draw);
+            graphics.addUpdate(update);
 
         }
         catch (e) {

@@ -2,7 +2,7 @@
  * 
  * @returns {undefined}
  */
-define(["glMatrix"], function(glMatrix) {
+define(["glmatrix"], function(glMatrix) {
 
     /**
      * 
@@ -19,7 +19,7 @@ define(["glMatrix"], function(glMatrix) {
         /*
          * Private members 
          */
-        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList, udpateList;
+        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], udpateList=[];
         my = my || {};
 
         /*
@@ -27,7 +27,7 @@ define(["glMatrix"], function(glMatrix) {
          */
         try {
             //setting webgl object
-            gl = spec.canvas.getContext("experimental-weblg");
+            gl = spec.canvas.getContext("experimental-webgl");
             gl.width = spec.canvas.width;
             gl.height = spec.canvas.height;
 
@@ -44,7 +44,7 @@ define(["glMatrix"], function(glMatrix) {
         }
         catch (e) {
             if (!gl) {
-                throw "Could not initialise WebGL, sorry :-(";
+                throw e.message + "\n Could not initialise WebGL, sorry :-(";
             }
             else {
                 throw e;
@@ -54,7 +54,7 @@ define(["glMatrix"], function(glMatrix) {
         function drawScene() {
             var i, drawsCount = drawList.length;
 
-            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            gl.viewport(0, 0, gl.width, gl.height);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             //synchronous call to avoid concurrent access on mvMatrix
@@ -74,7 +74,7 @@ define(["glMatrix"], function(glMatrix) {
         }
 
         function render() {
-            requestAnimFram(render);
+            requestAnimationFrame(render);
             drawScene();
             update();
         }
@@ -82,7 +82,11 @@ define(["glMatrix"], function(glMatrix) {
         /*
          * Public interface
          */
-
+        
+        var public = {
+            
+        };
+        
         /**
          * 
          * @returns {undefined}
@@ -97,9 +101,17 @@ define(["glMatrix"], function(glMatrix) {
          * 
          * @returns {undefined}
          */
+        function mvMatrixToIdentity(){
+            glMatrix.mat4.identity(mvMatrix);
+        }
+
+        /**
+         * 
+         * @returns {undefined}
+         */
         function mvMatrixPush() {
             var copy = glMatrix.mat4.create();
-            glMatrix.mat4.copy(mvMatrix, copy);
+            glMatrix.mat4.copy(copy, mvMatrix);
             mvMatrixStack.push(copy);
         }
 
@@ -113,7 +125,26 @@ define(["glMatrix"], function(glMatrix) {
             }
             mvMatrix = mvMatrixStack.pop();
         }
-
+        
+        /**
+         * 
+         * @param {type} v3
+         * @returns {undefined}
+         */
+        function mvTranslate(v3){
+            glMatrix.mat4.translate(mvMatrix,mvMatrix, v3);
+        }
+        
+        /**
+         * 
+         * @param {type} v3
+         * @param {type} angle
+         * @returns {undefined}
+         */
+        function mvRotate(v3, angle){
+            glMatrix.mat4.rotate(mvMatrix, mvMatrix, angle, v3);
+        }
+        
         /**
          * 
          * @param {type} shaderProgram
@@ -141,15 +172,19 @@ define(["glMatrix"], function(glMatrix) {
         function addUpdate(updateCallback) {
             udpateList.push(updateCallback);
         }
-
+        
         that.run = run;
+        that.mvMatrixToIdentity = mvMatrixToIdentity;
         that.mvMatrixPush = mvMatrixPush;
         that.mvMatrixPop = mvMatrixPop;
+        that.mvTranslate = mvTranslate;
+        that.mvRotate = mvRotate;
         that.applyTransforms = applyTransforms;
         that.addDraw = addDraw;
         that.addUpdate = addUpdate;
 
         that.gl = gl;
+        that.mvMatrix = mvMatrix;
 
         return that;
 

@@ -23,7 +23,7 @@ define(["graphics", "displayCell"], function(graphics, displayCell) {
             
             canvas.width = width;
             canvas.height = height;
-            container.append(canvas);
+            container.appendChild(canvas);
             graphics3D = graphics({canvas: canvas});
             cell = displayCell({graphics: graphics3D});
             graphics3D.run();
