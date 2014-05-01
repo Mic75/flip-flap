@@ -13,7 +13,7 @@ Constraints
 --
 - Use pure __webGL__ API (no frameworks such as Three.js) to become familiar with it
 - Use __requireJS__ to modularize the project
-- Use Douglas Crockford's _Functional Inheritance__ pattern to test it
-- bonus1 : use the common _Prototypal Inheritance__ pattern and compare code and perfs with the functional one
+- Use Douglas Crockford's _Functional Inheritance_ pattern to test it
+- bonus1 : use the common _Prototypal Inheritance_ pattern and compare code and perfs with the functional one
 
 

@@ -15,8 +15,11 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         /*
          * Private members 
          */
-        var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, vertexColorBuffer, gl,
-                lastTime, xRot, graphics, PI2;
+        var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, gl, lastTime, xRot, xRotPrev,
+                graphics, PI2, pages;
+
+
+
         my = my || {};
 
         function compileShader(shader, str) {
@@ -56,12 +59,12 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         }
 
         function initBuffers() {
-            var vertices, colors, i;
+            var vertices, i, j;
             vertexPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             vertices = [
-                1.0, 1.0, 0.0,
-                -1.0, 1.0, 0.0,
+                1.0, 1.3, 0.0,
+                -1.0, 1.3, 0.0,
                 1.0, -1.0, 0.0,
                 -1.0, -1.0, 0.0
             ];
@@ -69,47 +72,106 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             vertexPositionBuffer.itemSize = 3;
             vertexPositionBuffer.numItems = 4;
 
-            vertexColorBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-            vertices = [
-                1.0, 1.0, 0.0,
-                -1.0, 1.0, 0.0,
-                1.0, -1.0, 0.0,
-                -1.0, -1.0, 0.0
-            ];
-
-            colors = [];
-            for (i = 0; i < vertexPositionBuffer.numItems; i++) {
-                colors = colors.concat([1.0, 0.0, 0.0, 1.0]);
+            j = 0;
+            for (var pos in pages) {
+                if (pages.hasOwnProperty(pos)) {
+                    pages[pos].buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, pages[pos].buffer);
+                    pages[pos].colors = [];
+                    for (i = 0; i < vertexPositionBuffer.numItems; i++) {
+                        pages[pos].colors = pages[pos].colors.concat([0., 0., 0., 1.0]);
+                        pages[pos].colors[i*4+j] = 1.0;
+                    }
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pages[pos].colors), gl.STATIC_DRAW);
+                    pages[pos].buffer.itemSize = 4;
+                    pages[pos].buffer.numItems = 4;
+                    j++;
+                }
             }
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-            vertexColorBuffer.itemSize = 4;
-            vertexColorBuffer.numItems = 4;
         }
 
-        function draw() {
+        function drawTop() {
+            var colorBuffer = pages.top.buffer;
+
+            graphics.mvMatrixPush();
+            graphics.mvMatrixToIdentity();
+            graphics.mvTranslate([0., 1., -7.]);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+            gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            graphics.applyTransforms(shaderProgram);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
+            graphics.mvMatrixPop();
+        }
+
+        function drawMoving() {
+            var colorBuffer = pages.moving.buffer, needsUpdate = pages.moving.needsUpdate, colors;
             graphics.mvMatrixPush();
             graphics.mvMatrixToIdentity();
             graphics.mvTranslate([0., 0., -7.]);
             graphics.mvRotate([1., 0., 0.], xRot);
+            graphics.mvTranslate([0., 1., 0.]);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-            gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, vertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+            if (needsUpdate) {
+                colors = [];
+                for (var i = 0; i < colorBuffer.numItems; i++) {
+                    colors = colors.concat([Math.random(), Math.random(), Math.random(), 1.0]);
+                }
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+            }
+            gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             graphics.applyTransforms(shaderProgram);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
 
             graphics.mvMatrixPop();
+        }
 
+        function drawBottom() {
+            var colorBuffer = pages.bottom.buffer;
+            graphics.mvMatrixPush();
+            graphics.mvMatrixToIdentity();
+            graphics.mvTranslate([0., -1.3, -7.]);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+            gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            graphics.applyTransforms(shaderProgram);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
+            graphics.mvMatrixPop();
+        }
+
+        function draw() {
+            drawTop();
+            drawMoving();
+            drawBottom();
         }
 
         function update() {
             var timeNow = new Date().getTime();
             if (lastTime !== 0) {
                 var elapsed = timeNow - lastTime;
-                xRot = (xRot + (1.3 * elapsed) / 1000.0)%PI2;
+                xRot = (xRot + (1.3 * elapsed) / 1000.0) % PI2;
+                pages.moving.needsUpdate = false;
+                if (xRotPrev < Math.PI && xRot > Math.PI) {
+                    pages.moving.needsUpdate = true;
+                    xRotPrev = xRot;
+                }
+                else if (xRotPrev > Math.PI && xRot < Math.PI) {
+                    pages.moving.needsUpdate = true;
+                    xRotPrev = xRot;
+                }
             }
             lastTime = timeNow;
         }
@@ -122,7 +184,14 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             gl = graphics.gl;
             lastTime = 0;
             xRot = 0;
-            PI2 = Math.PI*2;
+            xRotPrev = 0;
+            PI2 = Math.PI * 2;
+
+            pages = {top: {},
+                moving: {needsUpdate: false},
+                bottom: {}
+            };
+
             initShaders(); //Shaders intialisation
             initBuffers(); //Buffers initialisation
             graphics.addDraw(draw);
