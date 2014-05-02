@@ -16,7 +16,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
          * Private members 
          */
         var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, gl, lastTime, xRot, xRotPrev,
-                graphics, PI2, pages;
+                graphics, PI2, halfPI, pages, completeTurn, halfTurn;
 
 
 
@@ -80,7 +80,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
                     pages[pos].colors = [];
                     for (i = 0; i < vertexPositionBuffer.numItems; i++) {
                         pages[pos].colors = pages[pos].colors.concat([0., 0., 0., 1.0]);
-                        pages[pos].colors[i*4+j] = 1.0;
+                        pages[pos].colors[i * 4 + j] = 1.0;
                     }
                     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pages[pos].colors), gl.STATIC_DRAW);
                     pages[pos].buffer.itemSize = 4;
@@ -91,7 +91,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         }
 
         function drawTop() {
-            var colorBuffer = pages.top.buffer;
+            var colorBuffer = pages.top.buffer, vCol;
 
             graphics.mvMatrixPush();
             graphics.mvMatrixToIdentity();
@@ -101,6 +101,15 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            if (completeTurn) {
+                pages.top.previousCol = pages.top.colors.slice(0);
+                pages.top.colors.splice(0);
+                vCol = [Math.random(), Math.random(), Math.random(), 1.0];
+                for (var i = 0; i < colorBuffer.numItems; i++) {
+                    pages.top.colors = pages.top.colors.concat(vCol);
+                }
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pages.top.colors), gl.STATIC_DRAW);
+            }
             gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             graphics.applyTransforms(shaderProgram);
@@ -109,7 +118,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         }
 
         function drawMoving() {
-            var colorBuffer = pages.moving.buffer, needsUpdate = pages.moving.needsUpdate, colors;
+            var colorBuffer = pages.moving.buffer, vCol;
             graphics.mvMatrixPush();
             graphics.mvMatrixToIdentity();
             graphics.mvTranslate([0., 0., -7.]);
@@ -120,13 +129,22 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
 
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 
-            if (needsUpdate) {
-                colors = [];
-                for (var i = 0; i < colorBuffer.numItems; i++) {
-                    colors = colors.concat([Math.random(), Math.random(), Math.random(), 1.0]);
-                }
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+            if (completeTurn) {
+                pages.moving.previousCol = pages.moving.colors.slice(0);
+                pages.moving.colors = pages.top.previousCol;
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pages.moving.colors), gl.STATIC_DRAW);
             }
+
+            if (halfTurn) {
+                pages.moving.previousCol = pages.moving.colors.slice(0);
+                pages.moving.colors.splice(0);
+                var vCol = [Math.random(), Math.random(), Math.random(), 1.0];
+                for (var i = 0; i < colorBuffer.numItems; i++) {
+                    pages.moving.colors = pages.moving.colors.concat(vCol);
+                }
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pages.moving.colors), gl.STATIC_DRAW);
+            }
+
             gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             graphics.applyTransforms(shaderProgram);
@@ -145,6 +163,12 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+            if (completeTurn) {
+                pages.bottom.colors = pages.moving.previousCol;
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pages.bottom.colors), gl.STATIC_DRAW);
+            }
+
             gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             graphics.applyTransforms(shaderProgram);
@@ -162,14 +186,16 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             var timeNow = new Date().getTime();
             if (lastTime !== 0) {
                 var elapsed = timeNow - lastTime;
-                xRot = (xRot + (1.3 * elapsed) / 1000.0) % PI2;
-                pages.moving.needsUpdate = false;
-                if (xRotPrev < Math.PI && xRot > Math.PI) {
-                    pages.moving.needsUpdate = true;
-                    xRotPrev = xRot;
+                xRot = (xRot + (1.3 * elapsed) / 1000.0);
+                halfTurn = false;
+                completeTurn = false;
+                if (xRot > Math.PI) {
+                    completeTurn = true;
+                    xRot = 0.1;
+                    xRotPrev = 0.0;
                 }
-                else if (xRotPrev > Math.PI && xRot < Math.PI) {
-                    pages.moving.needsUpdate = true;
+                else if (xRot > halfPI && xRotPrev < halfPI) {
+                    halfTurn = true;
                     xRotPrev = xRot;
                 }
             }
@@ -186,9 +212,10 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             xRot = 0;
             xRotPrev = 0;
             PI2 = Math.PI * 2;
+            halfPI = Math.PI * 0.5;
 
             pages = {top: {},
-                moving: {needsUpdate: false},
+                moving: {},
                 bottom: {}
             };
 
