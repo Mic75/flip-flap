@@ -17,7 +17,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
          */
         var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, topUVBuffer, bottomUVBuffer,
                 gl, lastTime, xRot, xRotPrev, graphics, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex,
-                characters, currentCharTex, nextCharTex;
+                characters, currentCharTex, nextCharTex, vertices;
 
 
 
@@ -79,7 +79,6 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             nextCharTex = gl.createTexture();
             nextCharTex.image = getCharTex(characters[currentCharIndex + 1]);
             gl.bindTexture(gl.TEXTURE_2D, nextCharTex);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, nextCharTex.image);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -88,14 +87,18 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         }
 
         function initBuffers() {
-            var vertices, i, j, uvs;
+            var uvs, sceneDimensions, rightX, topY, halfDepth;
             vertexPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+            sceneDimensions = graphics.getFrustumDim();
+            rightX = sceneDimensions.width*0.25/2;
+            topY = sceneDimensions.height*0.25/2;
+            halfDepth = sceneDimensions.depth/2;
             vertices = [
-                1.0, 1.3, 0.0,
-                -1.0, 1.3, 0.0,
-                1.0, -1.0, 0.0,
-                -1.0, -1.0, 0.0
+                rightX, topY , -halfDepth,
+               -rightX, topY , -halfDepth,
+                rightX, -topY, -halfDepth,
+               -rightX, -topY, -halfDepth
             ];
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
             vertexPositionBuffer.itemSize = 3;
@@ -148,7 +151,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
 
             graphics.mvMatrixPush();
             graphics.mvMatrixToIdentity();
-            graphics.mvTranslate([0., 1., -7.]);
+            graphics.mvTranslate([0., graphics.getFrustumDim().width*0.125, 0.]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -169,9 +172,9 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             var colorBuffer = pages.moving.buffer, vCol;
             graphics.mvMatrixPush();
             graphics.mvMatrixToIdentity();
-            graphics.mvTranslate([0., 0., -7.]);
+//            graphics.mvTranslate([0., 0., -.02]);
             graphics.mvRotate([1., 0., 0.], xRot);
-            graphics.mvTranslate([0., 1., 0.]);
+//            graphics.mvTranslate([0., graphics.getFrustumDim().width*0.125, 0.]);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
@@ -201,7 +204,7 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             var colorBuffer = pages.bottom.buffer;
             graphics.mvMatrixPush();
             graphics.mvMatrixToIdentity();
-            graphics.mvTranslate([0., -1.3, -7.]);
+            graphics.mvTranslate([0., -graphics.getFrustumDim().width*0.125, 0.]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -219,9 +222,9 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         }
 
         function draw() {
-            drawTop();
+//            drawTop();
             drawMoving();
-            drawBottom();
+//            drawBottom();
         }
 
         function updateTex() {

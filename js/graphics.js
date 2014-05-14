@@ -8,9 +8,9 @@ define(["glmatrix"], function(glMatrix) {
      * 
      * @param {Object} spec
      * @param {Object} spec.canvas
-     * @param {number} spec.fov
-     * @param {number} spec.near
-     * @param {number} spec.far
+     * @param {number} spec.width
+     * @param {number} spec.height
+     * @param {number} spec.depth
      * @param {type} my
      * @returns {undefined}
      */
@@ -19,7 +19,7 @@ define(["glmatrix"], function(glMatrix) {
         /*
          * Private members 
          */
-        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], udpateList=[];
+        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], udpateList=[], aspectRatio;
         my = my || {};
 
         /*
@@ -28,17 +28,18 @@ define(["glmatrix"], function(glMatrix) {
         try {
             //setting webgl object
             gl = spec.canvas.getContext("experimental-webgl");
-            gl.width = spec.canvas.width;
-            gl.height = spec.canvas.height;
+            gl.viewportW = spec.canvas.width;
+            gl.viewportH = spec.canvas.height;
+            aspectRatio = gl.viewportW / gl.viewportH;
             that.gl = gl;
             
             //setting perspective params
-            spec.fov = spec.fov || 45;
-            spec.near = spec.near || 0.1;
-            spec.far = spec.far || 100;
+            spec.width = spec.width || 100;
+            spec.height = spec.height || 100;
+            spec.depth = spec.depth || 100;
             pMatrix = glMatrix.mat4.create();
-            glMatrix.mat4.perspective(pMatrix, spec.fov, gl.width / gl.height, spec.near, spec.far);
-
+            glMatrix.mat4.ortho(pMatrix, -aspectRatio*spec.width/2, aspectRatio*spec.width/2, -spec.height/2, spec.height/2, 0, spec.depth );
+            
             //setting mv matrix to identity
             mvMatrix = glMatrix.mat4.create();
             mvMatrixStack = [];
@@ -55,7 +56,7 @@ define(["glmatrix"], function(glMatrix) {
         function drawScene() {
             var i, drawsCount = drawList.length;
 
-            gl.viewport(0, 0, gl.width, gl.height);
+            gl.viewport(0, 0, gl.viewportW, gl.viewportH);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
             //synchronous call to avoid concurrent access on mvMatrix
@@ -178,7 +179,19 @@ define(["glmatrix"], function(glMatrix) {
             udpateList.push(updateCallback);
         }
         that.addUpdate = addUpdate;
-
+        
+        /**
+         * 
+         * @returns {undefined}
+         */
+        function getFrustumDimension(){
+            return {
+                width: spec.width,
+                height: spec.height,
+                depth: spec.depth
+            };
+        }
+        that.getFrustumDim = getFrustumDimension;
         return that;
 
     };
