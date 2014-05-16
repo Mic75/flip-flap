@@ -34,9 +34,9 @@ define(["glmatrix"], function(glMatrix) {
             that.gl = gl;
             
             //setting perspective params
-            spec.width = spec.width || 100;
-            spec.height = spec.height || 100;
-            spec.depth = spec.depth || 100;
+            spec.width = spec.width || 200;
+            spec.height = spec.height || 200;
+            spec.depth = spec.depth || 200;
             pMatrix = glMatrix.mat4.create();
             glMatrix.mat4.ortho(pMatrix, -aspectRatio*spec.width/2, aspectRatio*spec.width/2, -spec.height/2, spec.height/2, 0, spec.depth );
             
@@ -90,7 +90,7 @@ define(["glmatrix"], function(glMatrix) {
          * @returns {undefined}
          */
         function run() {
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clearColor(.35, .35, .35, 1.0);
             gl.enable(gl.DEPTH_TEST);
             render();
         }
