@@ -9,12 +9,12 @@ define(["cell"], function(cell) {
         /*
          * Private Members
          */
-        var that, cells, fonts;
+        var that, cells, fontsTexture, gl;
 
         my = my || {};
 
         function measureCharHeight(fontStyle, width, height, ch) {
-            
+
             // create a temp canvas
             var canvas = document.createElement("canvas");
             canvas.width = width;
@@ -74,38 +74,48 @@ define(["cell"], function(cell) {
             return canvas;
         }
 
-        function getCanvas(ch) {
-            var canvas, context, metrics, fontSize, fontHeight, fontFamily;
+        function getFontTexture(ch) {
+            var canvas, context, metrics, fontSize, fontHeight, fontFamily, texture;
 
             canvas = createEmptyCanvas(128, 256);
             context = canvas.getContext("2d");
+
+            if (typeof ch !== "undefined") {
+                context.fillStyle = "yellow";
+                fontSize = 190;
+                fontFamily = "Arial";
+                context.font = fontSize + "pt " + fontFamily;
+                context.textAlign = "center";
+                fontHeight = measureCharHeight(context.font, 2 * fontSize, 2 * fontSize, ch);
+                context.fillText(ch, canvas.width / 2, (canvas.height * 0.9 + fontHeight + 1) / 2, fontHeight / 2);
+            }
             
-            context.fillStyle = "yellow";
-            fontSize = 190;
-            fontFamily = "Arial";
-            context.font = fontSize + "pt " + fontFamily;
-            context.textAlign = "center";
-            fontHeight = measureCharHeight(context.font, 2 * fontSize, 2 * fontSize, ch);
-            context.fillText(ch, canvas.width / 2, (canvas.height*0.9 + fontHeight + 1) / 2, fontHeight / 2);
+            texture = gl.createTexture();
+            texture.image = canvas;
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             
-            return canvas;
-            
+            return texture;
+
         }
 
         function initFontCanvas() {
             var currentFont, i, emptyCanvas;
 
-            fonts = [];
-            fonts.push(createEmptyCanvas());
+            fontsTexture = [];
+            fontsTexture.push(getFontTexture());
 
             //loop from '0' to '9'
             for (i = 48; i < 58; i++) {
-                fonts.push(getCanvas(String.fromCharCode(i)));
+                fontsTexture.push(getFontTexture(String.fromCharCode(i)));
             }
 
             //loop from 'A' to 'Z'
             for (i = 65; i < 91; i++) {
-                fonts.push(getCanvas(String.fromCharCode(i)));
+                fontsTexture.push(getFontTexture(String.fromCharCode(i)));
             }
         }
 
@@ -118,6 +128,7 @@ define(["cell"], function(cell) {
          */
         try {
             that = {};
+            gl = spec.graphics.gl;
             initFontCanvas();
             displayCells();
         }
@@ -137,13 +148,13 @@ define(["cell"], function(cell) {
         /*
          * Test interface
          */
-        that.testInitFontCanvas = function () {
-            fonts.forEach(function(canvas) {
-                canvas.style.marginRight = "1px";   
-                document.body.appendChild(canvas);
+        that.testInitFontCanvas = function() {
+            fontsTexture.forEach(function(texture) {
+                texture.image.style.marginRight = "1px";
+                document.body.appendChild(texture.image);
             });
         };
-        
+
         return that;
 
     };
