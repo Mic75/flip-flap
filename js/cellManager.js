@@ -89,7 +89,7 @@ define(["cell"], function(cell) {
                 fontHeight = measureCharHeight(context.font, 2 * fontSize, 2 * fontSize, ch);
                 context.fillText(ch, canvas.width / 2, (canvas.height * 0.9 + fontHeight + 1) / 2, fontHeight / 2);
             }
-            
+
             texture = gl.createTexture();
             texture.image = canvas;
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -97,12 +97,12 @@ define(["cell"], function(cell) {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            
+
             return texture;
 
         }
 
-        function initFontCanvas() {
+        function initFontsTexture() {
             var currentFont, i, emptyCanvas;
 
             fontsTexture = [];
@@ -120,6 +120,33 @@ define(["cell"], function(cell) {
         }
 
         function displayCells() {
+            var frustDimensions, cellWidth, cellHeight, cellsBB, i, j;
+
+            frustDimensions = spec.graphics.getFrustumDimensions();
+            cellWidth = frustDimensions.width * 0.25;
+            cellHeight = cellWidth * 2;
+            cellsBB = {
+                width: spec.colCount * cellWidth,
+                height: spec.rowCount * cellHeight,
+                x: {
+                    min: -cellsBB.width / 2,
+                    max: cellsBB.width / 2
+                },
+                y: {
+                    min: -cellsBB.height / 2,
+                    max: cellsBB.height / 2
+                }
+            };
+
+            for (i = 0; i < spec.rowCount; i++) {
+                for (j = 0; j < spec.colCount; j++) {
+                    cells.push(cells({width: cellWidth, height: cellHeight, pos: [
+                            j*cellWidth + cellsBB.x.min + cellWidth / 2,
+                            i*cellHeight + cellsBB.y.min + cellHeight / 2,
+                            frustDimensions.depth / 2
+                        ]}));
+                }
+            }
 
         }
 
@@ -129,7 +156,7 @@ define(["cell"], function(cell) {
         try {
             that = {};
             gl = spec.graphics.gl;
-            initFontCanvas();
+            initFontsTexture();
             displayCells();
         }
         catch (e) {
@@ -148,7 +175,7 @@ define(["cell"], function(cell) {
         /*
          * Test interface
          */
-        that.testInitFontCanvas = function() {
+        that.testInitFontsTexture = function() {
             fontsTexture.forEach(function(texture) {
                 texture.image.style.marginRight = "1px";
                 document.body.appendChild(texture.image);
