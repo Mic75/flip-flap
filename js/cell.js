@@ -70,7 +70,6 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
                 rightX, bottomY, -spec.pos[2],
                leftX, bottomY, -spec.pos[2]
             ];
-            console.log(vertices);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
             vertexPositionBuffer.itemSize = 3;
             vertexPositionBuffer.numItems = 4;

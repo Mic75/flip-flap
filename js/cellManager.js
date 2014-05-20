@@ -127,7 +127,17 @@ define(["cell"], function(cell) {
 
             frustDimensions = spec.graphics.getFrustumDimension();
             cellWidth = frustDimensions.width * 0.25;
+            
+            if ( cellWidth * spec.colCount > frustDimensions.width){
+                cellWidth = frustDimensions.width / spec.colCount;
+            }
+            
+            if ( (cellWidth * 2 * spec.rowCount) > frustDimensions.height){
+                cellWidth = frustDimensions.height / (2*spec.rowCount);
+            }
+            
             cellHeight = cellWidth * 2;
+            
             cellsBB = {
                 width: spec.colCount * cellWidth,
                 height: spec.rowCount * cellHeight,
