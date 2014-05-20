@@ -71,6 +71,9 @@ define(["cell"], function(cell) {
             context = canvas.getContext("2d");
             context.fillStyle = "black";
             context.fillRect(0, 0, w, h);
+            
+            context.strokeStyle ="yellow";
+            context.strokeRect(0,0,w,h);
             return canvas;
         }
 
@@ -122,29 +125,36 @@ define(["cell"], function(cell) {
         function displayCells() {
             var frustDimensions, cellWidth, cellHeight, cellsBB, i, j;
 
-            frustDimensions = spec.graphics.getFrustumDimensions();
+            frustDimensions = spec.graphics.getFrustumDimension();
             cellWidth = frustDimensions.width * 0.25;
             cellHeight = cellWidth * 2;
             cellsBB = {
                 width: spec.colCount * cellWidth,
                 height: spec.rowCount * cellHeight,
                 x: {
-                    min: -cellsBB.width / 2,
-                    max: cellsBB.width / 2
+                    min: -spec.colCount * cellWidth / 2,
+                    max: spec.colCount * cellWidth / 2
                 },
                 y: {
-                    min: -cellsBB.height / 2,
-                    max: cellsBB.height / 2
+                    min: -spec.rowCount * cellHeight / 2,
+                    max: spec.rowCount * cellHeight / 2
                 }
             };
 
             for (i = 0; i < spec.rowCount; i++) {
                 for (j = 0; j < spec.colCount; j++) {
-                    cells.push(cells({width: cellWidth, height: cellHeight, pos: [
-                            j*cellWidth + cellsBB.x.min + cellWidth / 2,
-                            i*cellHeight + cellsBB.y.min + cellHeight / 2,
+                    cells.push(cell({
+                        width: cellWidth,
+                        height: cellHeight,
+                        pos: [
+                            j * cellWidth + cellsBB.x.min + cellWidth / 2,
+                            i * cellHeight + cellsBB.y.min + cellHeight / 2,
                             frustDimensions.depth / 2
-                        ]}));
+                        ],
+                        fontsTexture: fontsTexture,
+                        graphics: spec.graphics,
+                        currentFontIndex : 20
+                    }));
                 }
             }
 
@@ -155,6 +165,7 @@ define(["cell"], function(cell) {
          */
         try {
             that = {};
+            cells = [];
             gl = spec.graphics.gl;
             initFontsTexture();
             displayCells();

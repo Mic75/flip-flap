@@ -191,7 +191,7 @@ define(["glmatrix"], function(glMatrix) {
                 depth: spec.depth
             };
         }
-        that.getFrustumDim = getFrustumDimension;
+        that.getFrustumDimension = getFrustumDimension;
         return that;
 
     };

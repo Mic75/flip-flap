@@ -16,8 +16,8 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
          * Private members 
          */
         var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, topUVBuffer, bottomUVBuffer,
-                gl, lastTime, xRot, xRotPrev, graphics, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex,
-                characters, currentCharTex, nextCharTex, vertices;
+                gl, lastTime, xRot, xRotPrev, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex,
+                characters, currentCharTex, nextCharTex, vertices, currentFontIndex, wantedFontIndex;
         my = my || {};
         
         function compileShader(shader, str) {
@@ -45,51 +45,32 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             gl.useProgram(shaderProgram);
             shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
             gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+            
             shaderProgram.vertexUVsAttribute = gl.getAttribLocation(shaderProgram, "aUV");
             gl.enableVertexAttribArray(shaderProgram.vertexUVsAttribute);
+            
             shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
             shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
             shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
         }
 
-        function initTexture() {
-
-//A to Z
-            characters = "";
-            for (var i = 65; i < 91; i++) {
-                characters += String.fromCharCode(i);
-            }
-
-            currentCharTex = gl.createTexture();
-            currentCharTex.image = getCharTex(characters[currentCharIndex]);
-            gl.bindTexture(gl.TEXTURE_2D, currentCharTex);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, currentCharTex.image);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            nextCharTex = gl.createTexture();
-            nextCharTex.image = getCharTex(characters[currentCharIndex + 1]);
-            gl.bindTexture(gl.TEXTURE_2D, nextCharTex);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, nextCharTex.image);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.bindTexture(gl.TEXTURE_2D, null);
-        }
-
         function initBuffers() {
-            var uvs, rightX, topY;
+            var uvs, rightX, leftX, topY, bottomY;
             
             // buffer of vertex position for the page of a cell
             vertexPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             rightX = spec.pos[0] + spec.width/2;
+            leftX = spec.pos[0] - spec.width/2;
             topY = spec.pos[1] + spec.height/4; //divided by 4, because a page height is half a cell height
+            bottomY = spec.pos[1] - spec.height/4;
             vertices = [
                 rightX, topY , -spec.pos[2],
-               -rightX, topY , -spec.pos[2],
-                rightX, -topY, -spec.pos[2],
-               -rightX, -topY, -spec.pos[2]
+               leftX, topY , -spec.pos[2],
+                rightX, bottomY, -spec.pos[2],
+               leftX, bottomY, -spec.pos[2]
             ];
+            console.log(vertices);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
             vertexPositionBuffer.itemSize = 3;
             vertexPositionBuffer.numItems = 4;
@@ -139,28 +120,32 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
 
         function drawTop() {
             
-            graphics.mvMatrixPush();
-            graphics.mvMatrixToIdentity();
-            graphics.mvTranslate([0., spec.height/4, 0.]);
+            spec.graphics.mvMatrixPush();
+            spec.graphics.mvMatrixToIdentity();
+            spec.graphics.mvTranslate([0., spec.height/4, 0.]);
+            
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, topUVBuffer);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, topUVBuffer);            
             gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, topUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, currentCharTex);
+            
+            gl.activeTexture(gl.TEXTURE0);            
+            gl.bindTexture(gl.TEXTURE_2D, spec.fontsTexture[currentFontIndex]);
             gl.uniform1i(shaderProgram.samplerUniform, 0);
-            graphics.applyTransforms(shaderProgram);
+            
+            spec.graphics.applyTransforms(shaderProgram);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
-            graphics.mvMatrixPop();
+            spec.graphics.mvMatrixPop();
         }
 
         function drawMoving() {
             var colorBuffer = pages.moving.buffer, vCol;
-            graphics.mvMatrixPush();
-            graphics.mvMatrixToIdentity();
-            graphics.mvTranslate([0., 0., -graphics.getFrustumDim().depth/2]);
-            graphics.mvRotate([1., 0., 0.], xRot);
-            graphics.mvTranslate([0., graphics.getFrustumDim().height*0.125, graphics.getFrustumDim().depth/2]);
+            spec.graphics.mvMatrixPush();
+            spec.graphics.mvMatrixToIdentity();
+            spec.graphics.mvTranslate([0., 0., -graphics.getFrustumDim().depth/2]);
+            spec.graphics.mvRotate([1., 0., 0.], xRot);
+            spec.graphics.mvTranslate([0., graphics.getFrustumDim().height*0.125, graphics.getFrustumDim().depth/2]);
 //            graphics.mvTranslate([0., graphics.getFrustumDim().width*0.125, 0.]);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -179,29 +164,33 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
 //                graphics.mvRotate([1., 0., 0.], Math.PI);
 //            }
 
-            graphics.applyTransforms(shaderProgram);
+            spec.graphics.applyTransforms(shaderProgram);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
-            graphics.mvMatrixPop();
+            spec.graphics.mvMatrixPop();
         }
 
         function drawBottom() {
-            var colorBuffer = pages.bottom.buffer;
-            graphics.mvMatrixPush();
-            graphics.mvMatrixToIdentity();
-            graphics.mvTranslate([0., -spec.height/4, 0.]);
+            spec.graphics.mvMatrixPush();
+            spec.graphics.mvMatrixToIdentity();
+            spec.graphics.mvTranslate([0., -spec.height/4, 0.]);
+            
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, currentCharTex);
+            gl.bindTexture(gl.TEXTURE_2D, spec.fontsTexture[currentFontIndex]);
             gl.uniform1i(shaderProgram.samplerUniform, 0);
+            
             gl.bindBuffer(gl.ARRAY_BUFFER, bottomUVBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, bottomUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
-            graphics.applyTransforms(shaderProgram);
+            
+            spec.graphics.applyTransforms(shaderProgram);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
-            graphics.mvMatrixPop();
+            spec.graphics.mvMatrixPop();
         }
 
         function draw() {
+            gl.useProgram(shaderProgram);
             drawTop();
 //            drawMoving();
             drawBottom();
@@ -253,13 +242,13 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
         try {
             
             // specs
-            graphics = spec.graphics;
-            spec.width = spec.width || graphics.getFrustumDim().width*0.25;
+            spec.width = spec.width || spec.graphics.getFrustumDim().width*0.25;
             spec.height = spec.height || spec.width * 2;
-            spec.pos = spec.pos || [0., 0., graphics.getFrustumDim().depth/2];
+            spec.pos = spec.pos || [0., 0., spec.graphics.getFrustumDim().depth/2];
+            wantedFontIndex = currentFontIndex = spec.currentFontIndex || 0;
+            gl = spec.graphics.gl;
             
             // intern vars and states
-            gl = graphics.gl;
             lastTime = 0;
             xRot = 0.1;
             xRotPrev = 0;
@@ -275,11 +264,10 @@ define(["text!../shaders/fsFlipflap.glsl", "text!../shaders/vsFlipflap.glsl", "g
             //init functions
             initShaders(); //Shaders intialisation
             initBuffers();   //Buffers initialisation
-            initTexture();
             
             //render loop callbacks
-            graphics.addDraw(draw);
-            graphics.addUpdate(updateDebug);
+            spec.graphics.addDraw(draw);
+            spec.graphics.addUpdate(updateDebug);
         }
         catch (e) {
             throw e;
