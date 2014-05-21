@@ -9,10 +9,8 @@ define(["cell"], function(cell) {
         /*
          * Private Members
          */
-        var that, cells, fontsTexture, gl;
-
+        var that, cells, fontsTexture, invertedFontsTexture,  gl;
         my = my || {};
-
         function measureCharHeight(fontStyle, width, height, ch) {
 
             // create a temp canvas
@@ -23,14 +21,12 @@ define(["cell"], function(cell) {
             ctx.font = fontStyle;
             ctx.clearRect(0, 0, width, height);
             ctx.fillText(ch, 0, height);
-
             // Get the pixel data from the canvas
             var data = ctx.getImageData(0, 0, width, height).data,
                     first = false,
                     last = false,
                     r = height,
                     c = 0;
-
             // Find the last line with a non-transparent pixel
             while (!last && r) {
                 r--;
@@ -63,26 +59,21 @@ define(["cell"], function(cell) {
 
         function createEmptyCanvas(w, h) {
             var canvas, context;
-
             canvas = document.createElement("canvas");
             canvas.width = w;
             canvas.height = h;
-
             context = canvas.getContext("2d");
             context.fillStyle = "black";
             context.fillRect(0, 0, w, h);
-            
-            context.strokeStyle ="yellow";
-            context.strokeRect(0,0,w,h);
+            context.strokeStyle = "yellow";
+            context.strokeRect(0, 0, w, h);
             return canvas;
         }
 
-        function getFontTexture(ch) {
+        function getFontTexture(ch, flipped) {
             var canvas, context, metrics, fontSize, fontHeight, fontFamily, texture;
-
             canvas = createEmptyCanvas(128, 256);
             context = canvas.getContext("2d");
-
             if (typeof ch !== "undefined") {
                 context.fillStyle = "yellow";
                 fontSize = 190;
@@ -96,48 +87,49 @@ define(["cell"], function(cell) {
             texture = gl.createTexture();
             texture.image = canvas;
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
             return texture;
-
         }
-
+        
         function initFontsTexture() {
             var currentFont, i, emptyCanvas;
-
             fontsTexture = [];
+            invertedFontsTexture = [];
             fontsTexture.push(getFontTexture());
-
+            invertedFontsTexture.push(getFontTexture());
+            
             //loop from '0' to '9'
             for (i = 48; i < 58; i++) {
-                fontsTexture.push(getFontTexture(String.fromCharCode(i)));
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                fontsTexture.push(getFontTexture(String.fromCharCode(i), true));
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+                invertedFontsTexture.push(getFontTexture(String.fromCharCode(i), false));
             }
 
-            //loop from 'A' to 'Z'
+//loop from 'A' to 'Z'
             for (i = 65; i < 91; i++) {
-                fontsTexture.push(getFontTexture(String.fromCharCode(i)));
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                fontsTexture.push(getFontTexture(String.fromCharCode(i), true));
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+                invertedFontsTexture.push(getFontTexture(String.fromCharCode(i), false));
             }
         }
 
         function displayCells() {
             var frustDimensions, cellWidth, cellHeight, cellsBB, i, j;
-
             frustDimensions = spec.graphics.getFrustumDimension();
             cellWidth = frustDimensions.width * 0.25;
-            
-            if ( cellWidth * spec.colCount > frustDimensions.width){
+            if (cellWidth * spec.colCount > frustDimensions.width) {
                 cellWidth = frustDimensions.width / spec.colCount;
             }
-            
-            if ( (cellWidth * 2 * spec.rowCount) > frustDimensions.height){
-                cellWidth = frustDimensions.height / (2*spec.rowCount);
+
+            if ((cellWidth * 2 * spec.rowCount) > frustDimensions.height) {
+                cellWidth = frustDimensions.height / (2 * spec.rowCount);
             }
-            
+
             cellHeight = cellWidth * 2;
-            
             cellsBB = {
                 width: spec.colCount * cellWidth,
                 height: spec.rowCount * cellHeight,
@@ -150,7 +142,6 @@ define(["cell"], function(cell) {
                     max: spec.rowCount * cellHeight / 2
                 }
             };
-
             for (i = 0; i < spec.rowCount; i++) {
                 for (j = 0; j < spec.colCount; j++) {
                     cells.push(cell({
@@ -162,8 +153,9 @@ define(["cell"], function(cell) {
                             frustDimensions.depth / 2
                         ],
                         fontsTexture: fontsTexture,
+                        invertedFontsTexture : invertedFontsTexture,
                         graphics: spec.graphics,
-                        currentFontIndex : 20
+                        currentFontIndex: 0
                     }));
                 }
             }
@@ -189,10 +181,20 @@ define(["cell"], function(cell) {
          */
 
         function updateCell(c, r, ch) {
-
+            var i = r * spec.rowCount + c, charCode = ch.toUpperCase().charCodeAt(0);
+            if (i < cells.length) {
+                if (charCode > 47 && charCode < 58) {// 0 to 10
+                    cells[i].animate(charCode - 46); //46 cause first index is for blank character
+                }
+                else if (charCode > 64 && charCode < 91) {
+                    cells[i].animate(charCode - 54);
+                }
+            }
+            else {
+                console.warn("No cell at row " + r + " and column " + c);
+            }
         }
         that.updateCell = updateCell;
-
         /*
          * Test interface
          */
@@ -202,13 +204,9 @@ define(["cell"], function(cell) {
                 document.body.appendChild(texture.image);
             });
         };
-
         return that;
-
     };
-
     return manager;
-
 });
 
 

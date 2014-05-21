@@ -6,20 +6,45 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        <title>Flip flap test page</title>
+        <title>Split-flap test page</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
         <div id="container"></div>
+        <div id="inputs"></div>
         <script src="js/require.js"></script>
         <script>
             require.config({
-               baseUrl: "js"
+                baseUrl: "js"
             });
-            
-            require(["flipFlap"], function(flipFlap){
-               flipFlap.create(document.getElementById("container"), {col: 3, row: 1});
+
+            require(["split-flap"], function(splitFlap) {
+
+                var col = 4, row = 1, i, inputsDiv, j;
+
+                //create the split-flap display
+                splitFlap.create(document.getElementById("container"), {col: col, row: row});
+
+                //add the input field to manipulate the split-flap
+                inputsDiv = document.getElementById("inputs");
+                for (i = 0; i < row; i++) {
+                    var fieldContainer = document.createElement("p");
+                    var inputField = document.createElement("input");
+                    inputField.type = "text";
+
+                    (function(i) {
+                        inputField.addEventListener("change", function(e) {
+                            for (j = 0; j < col; j++) {
+                                splitFlap.set(i, j, e.target.value.charAt(j));
+                            }
+                        }, false);
+                    })(i);
+
+                    fieldContainer.appendChild(inputField);
+                    inputsDiv.appendChild(fieldContainer);
+                }
+
             });
         </script>
     </body>

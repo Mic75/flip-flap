@@ -19,7 +19,7 @@ define(["glmatrix"], function(glMatrix) {
         /*
          * Private members 
          */
-        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], udpateList=[], aspectRatio;
+        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], updateList=[], aspectRatio;
         my = my || {};
 
         /*
@@ -69,7 +69,7 @@ define(["glmatrix"], function(glMatrix) {
         function update() {
 
             //updates may be called assynchronously
-            udpateList.forEach(function(update) {
+          updateList.forEach(function(update) {
                 update();
             });
 
@@ -176,9 +176,17 @@ define(["glmatrix"], function(glMatrix) {
          * @returns {undefined}
          */
         function addUpdate(updateCallback) {
-            udpateList.push(updateCallback);
+            updateList.push(updateCallback);
+            return updateList.length-1;
         }
         that.addUpdate = addUpdate;
+        
+        function removeUpdate(id){
+            if (id > 0 && id < updateList.length-1){
+                updateList.splice(id,1);
+            }
+        }
+        that.removeUpdate = removeUpdate;
         
         /**
          * 

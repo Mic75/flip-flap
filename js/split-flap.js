@@ -3,11 +3,14 @@
  */
 define(["graphics", "cellManager"], function(graphics, cellManager) {
 
+    var manager;
+    
     /**
      * 
      * @type type
      */
     var flipFlap = {
+        
         /**
          * 
          * @param {type} container
@@ -27,8 +30,18 @@ define(["graphics", "cellManager"], function(graphics, cellManager) {
             canvas.height = height;
             container.appendChild(canvas);
             graphics3D = graphics({canvas: canvas});
-            cellManager({rowCount: row, colCount: col, graphics: graphics3D});
+            manager = cellManager({rowCount: row, colCount: col, graphics: graphics3D});
             graphics3D.run();
+        },
+        /**
+         * 
+         * @param {type} r
+         * @param {type} c
+         * @param {type} ch
+         * @returns {undefined}
+         */
+        set: function(r,c,ch){
+            manager.updateCell(r,c,ch);
         }
     };
 
