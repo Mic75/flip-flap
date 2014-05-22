@@ -15,7 +15,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
         /*
          * Private members 
          */
-        var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, topUVBuffer, bottomUVBuffer,
+        var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, topUVBuffer, bottomUVBuffer, bottomInverUVBuffer,
                 gl, lastTime, xRot, xRotPrev, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex,
                 characters, currentCharTex, nextCharTex, vertices, currentFontIndex, wantedFontIndex, updateFunctionId,
                 angularSpeed;
@@ -102,6 +102,21 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
             bottomUVBuffer.itemSize = 2;
             bottomUVBuffer.numItems = 4;
+            
+             // buffer for the uvs coordinate of the texture applied on the moving page when at bottom
+            bottomInverUVBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, bottomInverUVBuffer);
+            uvs.splice(0);
+            uvs = [
+                1.0, 0.0,
+                0.0, 0.0,
+                1.0, 0.5,
+                0.0, 0.5
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+            bottomInverUVBuffer.itemSize = 2;
+            bottomInverUVBuffer.numItems = 4;
+            
         }
 
         function drawTop() {
@@ -149,11 +164,11 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
                 gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, topUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
             }
             else {
-                gl.bindTexture(gl.TEXTURE_2D, spec.invertedFontsTexture[nextFontIndex]);
+                gl.bindTexture(gl.TEXTURE_2D, spec.fontsTexture[nextFontIndex]);
                 gl.uniform1i(shaderProgram.samplerUniform, 0);
                 
-                gl.bindBuffer(gl.ARRAY_BUFFER, topUVBuffer);
-                gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, topUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, bottomInverUVBuffer);
+                gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, bottomInverUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
                 
             }
 

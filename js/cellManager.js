@@ -9,7 +9,7 @@ define(["cell"], function(cell) {
         /*
          * Private Members
          */
-        var that, cells, fontsTexture, invertedFontsTexture,  gl;
+        var that, cells, fontsTexture, gl;
         my = my || {};
         function measureCharHeight(fontStyle, width, height, ch) {
 
@@ -92,29 +92,23 @@ define(["cell"], function(cell) {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             return texture;
         }
-        
+
         function initFontsTexture() {
             var currentFont, i, emptyCanvas;
             fontsTexture = [];
-            invertedFontsTexture = [];
             fontsTexture.push(getFontTexture());
-            invertedFontsTexture.push(getFontTexture());
-            
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
             //loop from '0' to '9'
             for (i = 48; i < 58; i++) {
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
                 fontsTexture.push(getFontTexture(String.fromCharCode(i), true));
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-                invertedFontsTexture.push(getFontTexture(String.fromCharCode(i), false));
             }
 
-//loop from 'A' to 'Z'
+            //loop from 'A' to 'Z'
             for (i = 65; i < 91; i++) {
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
                 fontsTexture.push(getFontTexture(String.fromCharCode(i), true));
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-                invertedFontsTexture.push(getFontTexture(String.fromCharCode(i), false));
             }
+            
         }
 
         function displayCells() {
@@ -153,7 +147,6 @@ define(["cell"], function(cell) {
                             frustDimensions.depth / 2
                         ],
                         fontsTexture: fontsTexture,
-                        invertedFontsTexture : invertedFontsTexture,
                         graphics: spec.graphics,
                         currentFontIndex: 0
                     }));
