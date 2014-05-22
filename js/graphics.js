@@ -182,7 +182,7 @@ define(["glmatrix"], function(glMatrix) {
         that.addUpdate = addUpdate;
         
         function removeUpdate(id){
-            if (id > 0 && id < updateList.length-1){
+            if (id !== null && id < updateList.length-1){
                 updateList.splice(id,1);
             }
         }

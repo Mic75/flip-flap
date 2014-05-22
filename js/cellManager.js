@@ -174,7 +174,7 @@ define(["cell"], function(cell) {
          */
 
         function updateCell(r,c, ch) {
-            var i = r * spec.rowCount + c, charCode = ch.toUpperCase().charCodeAt(0);
+            var i = r * spec.colCount + c, charCode = ch.toUpperCase().charCodeAt(0);
             if (i < cells.length) {
                 if (charCode > 47 && charCode < 58) {// 0 to 10
                     cells[i].animate(charCode - 47, {angularSpeed: spec.speed}); 
