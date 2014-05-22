@@ -11,8 +11,16 @@ and open the template in the editor.
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-        <div id="container"></div>
-        <div id="inputs"></div>
+        <!--        <div id="container"></div>
+                
+                <div id="inputs"></div>-->
+        <label for="row">Row</label>
+        <input type="text" id="row" /></br>
+        <label for="col">Col</label>
+        <input type="text" id="col"></br>
+        <label for="speed">Speed</label>
+        <input type="text" id="speed"></br>
+        <button id="generate">generate</button>
         <script src="js/require.js"></script>
         <script>
             require.config({
@@ -21,30 +29,50 @@ and open the template in the editor.
 
             require(["split-flap"], function(splitFlap) {
 
-                var col = 4, row = 2, i, inputsDiv, j;
 
-                //create the split-flap display
-                splitFlap.create(document.getElementById("container"), {col: col, row: row});
 
-                //add the input field to manipulate the split-flap
-                inputsDiv = document.getElementById("inputs");
-                for (i = 0; i < row; i++) {
-                    var fieldContainer = document.createElement("p");
-                    var inputField = document.createElement("input");
-                    inputField.type = "text";
+                var button = document.getElementById("generate");
+                button.addEventListener("click", function() {
+                    var col , row, i, speed, inputsDiv, container, j;
+                    
+                    function getValue(name, defaultVal){
+                        var val = parseFloat(document.getElementById(name).value);
+                        return (isNaN(val) ? defaultVal : val);
+                    }
+                    
+                    col = getValue("col",3);
+                    row = getValue("row",1);
+                    speed = getValue("speed",10);
+                    
+                    console.log(speed);
+                    
+                    container = document.createElement("div");
+                    document.body.appendChild(container);
+                    
+                    //create the split-flap display
+                    splitFlap.create(container, {col: col, row: row, speed: speed});
 
-                    (function(i) {
-                        inputField.addEventListener("change", function(e) {
-                            for (j = 0; j < col; j++) {
-                                splitFlap.set(i, j, e.target.value.charAt(j));
-                            }
-                        }, false);
-                    })(i);
+                    //add the input field to manipulate the split-flap
+                    inputsDiv = document.createElement("div");
+                    for (i = 0; i < row; i++) {
+                        var fieldContainer = document.createElement("p");
+                        var inputField = document.createElement("input");
+                        inputField.type = "text";
 
-                    fieldContainer.appendChild(inputField);
-                    inputsDiv.appendChild(fieldContainer);
-                }
+                        (function(i) {
+                            inputField.addEventListener("change", function(e) {
+                                for (j = 0; j < col; j++) {
+                                    splitFlap.set(i, j, e.target.value.charAt(j));
+                                }
+                            }, false);
+                        })(i);
 
+                        fieldContainer.appendChild(inputField);
+                        inputsDiv.appendChild(fieldContainer);
+                        document.body.appendChild(inputsDiv);
+                    }
+
+                }, false);
             });
         </script>
     </body>

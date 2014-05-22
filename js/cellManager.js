@@ -136,7 +136,7 @@ define(["cell"], function(cell) {
                     max: spec.rowCount * cellHeight / 2
                 }
             };
-            for (i = 0; i < spec.rowCount; i++) {
+            for (i = spec.rowCount-1; i >= 0; i--) {
                 for (j = 0; j < spec.colCount; j++) {
                     cells.push(cell({
                         width: cellWidth,
@@ -173,14 +173,14 @@ define(["cell"], function(cell) {
          * Public interface
          */
 
-        function updateCell(c, r, ch) {
+        function updateCell(r,c, ch) {
             var i = r * spec.rowCount + c, charCode = ch.toUpperCase().charCodeAt(0);
             if (i < cells.length) {
                 if (charCode > 47 && charCode < 58) {// 0 to 10
-                    cells[i].animate(charCode - 46); //46 cause first index is for blank character
+                    cells[i].animate(charCode - 47, {angularSpeed: spec.speed}); 
                 }
                 else if (charCode > 64 && charCode < 91) {
-                    cells[i].animate(charCode - 54);
+                    cells[i].animate(charCode - 54, {angularSpeed: spec.speed});
                 }
             }
             else {

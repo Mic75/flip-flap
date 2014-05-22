@@ -148,9 +148,9 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
             
-            spec.graphics.mvTranslate([spec.pos[0], 0, -spec.pos[2]]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1], -spec.pos[2]]);
             spec.graphics.mvRotate([1., 0., 0.], xRot);
-            spec.graphics.mvTranslate([0, spec.pos[1] + spec.height/4 , 0]);
+            spec.graphics.mvTranslate([0, spec.height/4 , 0]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
