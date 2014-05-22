@@ -62,15 +62,15 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             // buffer of vertex position for the page of a cell
             vertexPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-            rightX = spec.pos[0] + spec.width / 2;
-            leftX = spec.pos[0] - spec.width / 2;
-            topY = spec.pos[1] + spec.height / 4; //divided by 4, because a page height is half a cell height
-            bottomY = spec.pos[1] - spec.height / 4;
+            rightX = spec.width / 2;
+//            leftX = -spec.width / 2;
+            topY = spec.height / 4; //divided by 4, because a page height is half a cell height
+//            bottomY = -topY
             vertices = [
-                rightX, topY, -spec.pos[2],
-                leftX, topY, -spec.pos[2],
-                rightX, bottomY, -spec.pos[2],
-                leftX, bottomY, -spec.pos[2]
+                 rightX,  topY, 0,
+                -rightX,  topY, 0,
+                 rightX, -topY, 0,
+                -rightX, -topY, 0
             ];
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
             vertexPositionBuffer.itemSize = 3;
@@ -125,7 +125,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([0., spec.height / 4, 0.]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] + spec.height/4, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -148,9 +148,9 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
             
-            spec.graphics.mvTranslate([0., 0., -spec.pos[2]]);
+            spec.graphics.mvTranslate([spec.pos[0], 0, -spec.pos[2]]);
             spec.graphics.mvRotate([1., 0., 0.], xRot);
-            spec.graphics.mvTranslate([0., spec.height / 4, spec.pos[2]]);
+            spec.graphics.mvTranslate([0, spec.pos[1] + spec.height/4 , 0]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -180,7 +180,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
         function drawBottom() {
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([0., -spec.height / 4, 0.]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] -spec.height / 4, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -250,7 +250,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             // specs
             spec.width = spec.width || spec.graphics.getFrustumDim().width * 0.25;
             spec.height = spec.height || spec.width * 2;
-            spec.pos = spec.pos || [0., 0., spec.graphics.getFrustumDim().depth / 2];
+            spec.pos = spec.pos || [0., 0., 0.];
             wantedFontIndex = currentFontIndex = spec.currentFontIndex || 0;
             gl = spec.graphics.gl;
 
@@ -290,7 +290,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
                 lastTime = 0;
                 xRot = 0.1;
                 xRotPrev = 0;
-                angularSpeed = options.angularSpeed || 10;
+                angularSpeed = options.angularSpeed || 0.5;
                 updateFunctionId = spec.graphics.addUpdate(update);
             }
             else {
