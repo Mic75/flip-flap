@@ -17,8 +17,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
          */
         var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, topUVBuffer, bottomUVBuffer, bottomInverUVBuffer,
                 gl, lastTime, xRot, xRotPrev, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex,
-                characters, currentCharTex, nextCharTex, vertices, currentFontIndex, wantedFontIndex, updateFunctionId,
-                angularSpeed;
+                characters, currentCharTex, nextCharTex, vertices, currentFontIndex, wantedFontIndex, angularSpeed;
 
         my = my || {};
 
@@ -227,8 +226,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
                     xRot = 0.1;
                     xRotPrev = 0.0;
                     if (currentFontIndex === wantedFontIndex) {
-                        spec.graphics.removeUpdate(updateFunctionId);
-                        updateFunctionId = null;
+                        spec.graphics.removeUpdate(spec.name);
                     }
                     else {
                         currentFontIndex = (currentFontIndex + 1) % spec.fontsTexture.length;
@@ -255,7 +253,6 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             gl = spec.graphics.gl;
 
             // intern vars and states
-            updateFunctionId = null;
             PI2 = Math.PI * 2;
             halfPI = Math.PI * 0.5;
 
@@ -285,13 +282,13 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             
             options = options || {};
             
-            if (updateFunctionId === null) {
+            if ( spec.graphics.registeredUpdate(spec.name) === false) {
                 wantedFontIndex = wantedFontIdx;
                 lastTime = 0;
                 xRot = 0.1;
                 xRotPrev = 0;
                 angularSpeed = options.angularSpeed || 0.5;
-                updateFunctionId = spec.graphics.addUpdate(update);
+                spec.graphics.addUpdate(spec.name, update);
             }
             else {
                 wantedFontIndex = wantedFontIdx;

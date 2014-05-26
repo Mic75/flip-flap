@@ -148,7 +148,8 @@ define(["cell"], function(cell) {
                         ],
                         fontsTexture: fontsTexture,
                         graphics: spec.graphics,
-                        currentFontIndex: 0
+                        currentFontIndex: 0,
+                        name: "Cell"+(spec.rowCount-i-1)+","+j
                     }));
                 }
             }

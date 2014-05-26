@@ -19,7 +19,7 @@ define(["glmatrix"], function(glMatrix) {
         /*
          * Private members 
          */
-        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], updateList=[], aspectRatio;
+        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], updateList={}, aspectRatio;
         my = my || {};
 
         /*
@@ -65,14 +65,14 @@ define(["glmatrix"], function(glMatrix) {
             }
         }
 
-
+        
         function update() {
 
-            //updates may be called assynchronously
-          updateList.forEach(function(update) {
-                update();
-            });
-
+            for(var id in updateList){
+                if (updateList.hasOwnProperty(id)){
+                    updateList[id]();
+                }
+            }
         }
 
         function render() {
@@ -169,28 +169,26 @@ define(["glmatrix"], function(glMatrix) {
             drawList.push(drawCallBack);
         }
         that.addDraw = addDraw;
-        
+
         /**
          * 
+         * @param {type} id
          * @param {type} updateCallback
          * @returns {undefined}
          */
-        function addUpdate(updateCallback) {
-            updateList.push(updateCallback);
-            return updateList.length-1;
+        function addUpdate(id, updateCallback) {
+            updateList[id] = updateCallback;
         }
         that.addUpdate = addUpdate;
         
         function removeUpdate(id){
-            if (id !== null && id < updateList.length-1){
-                updateList.splice(id,1);
-            }
+            delete updateList[id];
         }
         that.removeUpdate = removeUpdate;
         
         /**
          * 
-         * @returns {undefined}
+         * @returns {_L5.graphics.getFrustumDimension.Anonym$1}
          */
         function getFrustumDimension(){
             return {
@@ -200,6 +198,17 @@ define(["glmatrix"], function(glMatrix) {
             };
         }
         that.getFrustumDimension = getFrustumDimension;
+        
+        /**
+         * 
+         * @param {type} name
+         * @returns {Boolean}
+         */
+        function registeredUpdate(name){
+            return typeof updateList[name] !== "undefined";
+        }
+        that.registeredUpdate = registeredUpdate;
+        
         return that;
 
     };
