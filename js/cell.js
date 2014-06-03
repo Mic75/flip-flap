@@ -16,7 +16,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
          * Private members 
          */
         var that = {}, shaderProgram, vsShader, fsShader, vertexPositionBuffer, topUVBuffer, bottomUVBuffer, bottomInverUVBuffer,
-                gl, lastTime, xRot, xRotPrev, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex,
+                gl, lastTime, xRot, xRotPrev, PI2, halfPI, pages, completeTurn, halfTurn, currentCharIndex, pageProportion,
                 characters, currentCharTex, nextCharTex, vertices, currentFontIndex, wantedFontIndex, angularSpeed;
 
         my = my || {};
@@ -61,19 +61,31 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             // buffer of vertex position for the page of a cell
             vertexPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-            rightX = spec.width / 2;
-//            leftX = -spec.width / 2;
-            topY = spec.height / 4; //divided by 4, because a page height is half a cell height
-//            bottomY = -topY
+            rightX = spec.width * (pageProportion) / 2;
+            topY = spec.height * (pageProportion - 0.02) / 4; //divided by 4, because a page height is half a cell height
             vertices = [
-                 rightX,  topY, 0,
-                -rightX,  topY, 0,
-                 rightX, -topY, 0,
+                rightX, topY, 0,
+                -rightX, topY, 0,
+                rightX, -topY, 0,
                 -rightX, -topY, 0
             ];
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
             vertexPositionBuffer.itemSize = 3;
             vertexPositionBuffer.numItems = 4;
+
+
+            /*vertexPositionBuffer2 = gl.createBuffer();
+             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer2);
+             
+             vertices = [
+             rightX, topY, 0,
+             -rightX, topY, 0,
+             rightX, -topY, 0,
+             -rightX, -topY, 0
+             ];
+             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+             vertexPositionBuffer.itemSize = 3;
+             vertexPositionBuffer.numItems = 4;*/
 
             // buffer for the uvs coordinate of the texture applied on the top page of a cell
             topUVBuffer = gl.createBuffer();
@@ -101,8 +113,8 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
             bottomUVBuffer.itemSize = 2;
             bottomUVBuffer.numItems = 4;
-            
-             // buffer for the uvs coordinate of the texture applied on the moving page when at bottom
+
+            // buffer for the uvs coordinate of the texture applied on the moving page when at bottom
             bottomInverUVBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, bottomInverUVBuffer);
             uvs.splice(0);
@@ -115,7 +127,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
             bottomInverUVBuffer.itemSize = 2;
             bottomInverUVBuffer.numItems = 4;
-            
+
         }
 
         function drawTop() {
@@ -124,7 +136,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] + spec.height/4, -spec.pos[2]]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] + spec.height * pageProportion / 4, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -146,29 +158,34 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            
+
             spec.graphics.mvTranslate([spec.pos[0], spec.pos[1], -spec.pos[2]]);
             spec.graphics.mvRotate([1., 0., 0.], xRot);
-            spec.graphics.mvTranslate([0, spec.height/4 , 0]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE0);
 
             if (xRot < halfPI) {
+
+                spec.graphics.mvTranslate([0, spec.height * pageProportion / 4, 0]);
+
                 gl.bindTexture(gl.TEXTURE_2D, spec.fontsTexture[currentFontIndex]);
                 gl.uniform1i(shaderProgram.samplerUniform, 0);
-                
+
                 gl.bindBuffer(gl.ARRAY_BUFFER, topUVBuffer);
                 gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, topUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
             }
             else {
+
+                spec.graphics.mvTranslate([0, spec.height * pageProportion / 4, 0]);
+
                 gl.bindTexture(gl.TEXTURE_2D, spec.fontsTexture[nextFontIndex]);
                 gl.uniform1i(shaderProgram.samplerUniform, 0);
-                
+
                 gl.bindBuffer(gl.ARRAY_BUFFER, bottomInverUVBuffer);
                 gl.vertexAttribPointer(shaderProgram.vertexUVsAttribute, bottomInverUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
-                
+
             }
 
             spec.graphics.applyTransforms(shaderProgram);
@@ -179,7 +196,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
         function drawBottom() {
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] -spec.height / 4, -spec.pos[2]]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] - spec.height * pageProportion / 4, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -255,6 +272,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
             // intern vars and states
             PI2 = Math.PI * 2;
             halfPI = Math.PI * 0.5;
+            pageProportion = 0.9
 
             //init functions
             initShaders(); //Shaders intialisation
@@ -262,7 +280,7 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
 
             //render loop callbacks
             spec.graphics.addDraw(draw);
-            
+
         }
         catch (e) {
             throw e;
@@ -279,10 +297,10 @@ define(["text!../shaders/fsSplit-flap.glsl", "text!../shaders/vsSplit-flap.glsl"
          * @returns {undefined}
          */
         function animate(wantedFontIdx, options) {
-            
+
             options = options || {};
-            
-            if ( spec.graphics.registeredUpdate(spec.name) === false) {
+
+            if (spec.graphics.registeredUpdate(spec.name) === false) {
                 wantedFontIndex = wantedFontIdx;
                 lastTime = 0;
                 xRot = 0.1;
