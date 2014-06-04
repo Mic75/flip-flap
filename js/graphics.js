@@ -151,12 +151,12 @@ define(["glmatrix"], function(glMatrix) {
         
         /**
          * 
-         * @param {type} shaderProgram
+         * @param {type} shader
          * @returns {undefined}
          */
-        function applyTransforms(shaderProgram) {
-            gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-            gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+        function applyTransforms(shader) {
+            gl.uniformMatrix4fv(shader.pMatrixUniform, false, pMatrix);
+            gl.uniformMatrix4fv(shader.mvMatrixUniform, false, mvMatrix);
         }
         that.applyTransforms = applyTransforms;
         

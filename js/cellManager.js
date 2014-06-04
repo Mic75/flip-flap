@@ -65,8 +65,6 @@ define(["cell"], function(cell) {
             context = canvas.getContext("2d");
             context.fillStyle = "black";
             context.fillRect(0, 0, w, h);
-            context.strokeStyle = "yellow";
-            context.strokeRect(0, 0, w, h);
             return canvas;
         }
 
