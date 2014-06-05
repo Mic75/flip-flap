@@ -35,7 +35,7 @@ define(["graphics", "cellManager"], function(graphics, cellManager) {
                 graphics3D.run();
             }
             catch(e){
-                console.error(e);
+                console.error(e.message);
             }
         },
         /**

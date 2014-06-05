@@ -3,13 +3,18 @@
  * @param {type} cell
  * @returns {undefined}
  */
-define(["cell"], function(cell) {
+define(["text!../shaders/fsTexture.glsl",
+        "text!../shaders/vsTexture.glsl",
+        "text!../shaders/fsColor.glsl",
+        "text!../shaders/vsColor.glsl", 
+        "cell"], function(fsTexture, vsTexture, fsColor, vsColor, cell) {
 
     var manager = function(spec, my) {
         /*
          * Private Members
          */
-        var that, cells, fontsTexture, gl;
+        var that, cells, fontsTexture, gl, texShader, colShader, cellPageBuffers, cellFrameBuffers,
+                frustDimensions, cellWidth, cellHeight, wProportion, hProportion;
         my = my || {};
         function measureCharHeight(fontStyle, width, height, ch) {
 
@@ -92,7 +97,7 @@ define(["cell"], function(cell) {
         }
 
         function initFontsTexture() {
-            var currentFont, i, emptyCanvas;
+            var i;
             fontsTexture = [];
             fontsTexture.push(getFontTexture());
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -106,22 +111,187 @@ define(["cell"], function(cell) {
             for (i = 65; i < 91; i++) {
                 fontsTexture.push(getFontTexture(String.fromCharCode(i), true));
             }
+
+        }
+
+        function compileShader(shader, str) {
+            gl.shaderSource(shader, str);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                throw gl.getShaderInfoLog(shader);
+            }
+        }
+
+        function initTextureShaders() {
+            var vsShader, fsShader;
+
+            vsShader = gl.createShader(gl.VERTEX_SHADER);
+            compileShader(vsShader, vsTexture);
+
+            fsShader = gl.createShader(gl.FRAGMENT_SHADER);
+            compileShader(fsShader, fsTexture);
+
+            texShader = gl.createProgram();
+            gl.attachShader(texShader, vsShader);
+            gl.attachShader(texShader, fsShader);
+            gl.linkProgram(texShader);
+            if (!gl.getProgramParameter(texShader, gl.LINK_STATUS)) {
+
+                throw "Shader linking failed, could not initialise shaders\n" + gl.getProgramInfoLog(texShader);
+            }
+
+            gl.useProgram(texShader);
+            texShader.vertexPositionAttribute = gl.getAttribLocation(texShader, "aVertexPosition");
+            gl.enableVertexAttribArray(texShader.vertexPositionAttribute);
+
+            texShader.vertexUVsAttribute = gl.getAttribLocation(texShader, "aUV");
+            gl.enableVertexAttribArray(texShader.vertexUVsAttribute);
+
+            texShader.samplerUniform = gl.getUniformLocation(texShader, "uSampler");
+            texShader.pMatrixUniform = gl.getUniformLocation(texShader, "uPMatrix");
+            texShader.mvMatrixUniform = gl.getUniformLocation(texShader, "uMVMatrix");
+        }
+
+        function initColorShaders() {
+            var fsShader, vsShader;
             
+            vsShader = gl.createShader(gl.VERTEX_SHADER);
+            compileShader(vsShader, vsColor);
+            
+            fsShader = gl.createShader(gl.FRAGMENT_SHADER);
+            compileShader(fsShader, fsColor);
+            
+            colShader = gl.createProgram();
+            gl.attachShader(colShader, vsShader);
+            gl.attachShader(colShader, fsShader);
+            gl.linkProgram(colShader);
+            if (!gl.getProgramParameter(colShader, gl.LINK_STATUS)) {
+                throw "Shader linking failed, could not initialise shaders\n" + gl.getProgramInfoLog(colShader);
+            }
+
+            gl.useProgram(colShader);
+            colShader.vertexPositionAttribute = gl.getAttribLocation(colShader, "aVertexPosition");
+            gl.enableVertexAttribArray(colShader.vertexPositionAttribute);
+
+            colShader.vertexColorsAttribute = gl.getAttribLocation(colShader, "aVertexColor");
+            gl.enableVertexAttribArray(colShader.vertexColorsAttribute);
+
+            colShader.pMatrixUniform = gl.getUniformLocation(colShader, "uPMatrix");
+            colShader.mvMatrixUniform = gl.getUniformLocation(colShader, "uMVMatrix");
+        }
+        
+        function initCellPageBuffers() {
+            var rightX, topY, uvs, vertices;
+            
+            cellPageBuffers = {};
+            cellPageBuffers.vertexPosition = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, cellPageBuffers.vertexPosition);
+            cellPageBuffers.inBetweenSpace = cellHeight * 0.01;
+                    
+            rightX = cellWidth * (wProportion) / 2;
+            //divided by 4, because a page height is half a cell height
+            topY = (cellHeight * hProportion - cellPageBuffers.inBetweenSpace) / 4; 
+            //used in cell to place the geom at the good place
+            cellPageBuffers.vTranslation = (cellHeight * hProportion + cellPageBuffers.inBetweenSpace) / 4;
+                    
+            vertices = [
+                rightX, topY, 0,
+                -rightX, topY, 0,
+                rightX, -topY, 0,
+                -rightX, -topY, 0
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            cellPageBuffers.vertexPosition.itemSize = 3;
+            cellPageBuffers.vertexPosition.numItems = 4;
+            
+            // buffer for the uvs coordinate of the texture applied on the top page of a cell
+            cellPageBuffers.topUVBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, cellPageBuffers.topUVBuffer);
+            uvs = [
+                1.0, 1.0,
+                0.0, 1.0,
+                1.0, 0.5,
+                0.0, 0.5
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+            cellPageBuffers.topUVBuffer.itemSize = 2;
+            cellPageBuffers.topUVBuffer.numItems = 4;
+
+            // buffer for the uvs coordinate of the texture applied on the bottom page of a cell
+            cellPageBuffers.bottomUVBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, cellPageBuffers.bottomUVBuffer);
+            uvs.splice(0);
+            uvs = [
+                1.0, 0.5,
+                0.0, 0.5,
+                1.0, 0.0,
+                0.0, 0.0
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+            cellPageBuffers.bottomUVBuffer.itemSize = 2;
+            cellPageBuffers.bottomUVBuffer.numItems = 4;
+
+            // buffer for the uvs coordinate of the texture applied on the moving page when at bottom
+            cellPageBuffers.bottomInverUVBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, cellPageBuffers.bottomInverUVBuffer);
+            uvs.splice(0);
+            uvs = [
+                1.0, 0.0,
+                0.0, 0.0,
+                1.0, 0.5,
+                0.0, 0.5
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+            cellPageBuffers.bottomInverUVBuffer.itemSize = 2;
+            cellPageBuffers.bottomInverUVBuffer.numItems = 4;
+        }
+        
+        function initCellFrameBuffers() {
+            var halfWidth, halfHeight, frameThick, colors, vertices;
+            
+            cellFrameBuffers = {};
+            cellFrameBuffers.vertexPosition = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, cellFrameBuffers.vertexPosition);
+
+            halfWidth = cellWidth / 2;
+            halfHeight = cellHeight / 2;
+            frameThick = halfWidth * (1 - wProportion);
+
+            vertices = [
+                -halfWidth, halfHeight, 0,
+                -halfWidth + frameThick, halfHeight - frameThick, 0,
+                0, halfHeight, 0,
+                halfWidth - frameThick, halfHeight - frameThick, 0,
+                halfWidth, halfHeight, 0,
+                halfWidth - frameThick, 0, 0,
+                halfWidth, -halfHeight, 0,
+                halfWidth - frameThick, -halfHeight + frameThick, 0,
+                -halfWidth, -halfHeight, 0,
+                -halfWidth + frameThick, -halfHeight + frameThick, 0,
+                -halfWidth, 0, 0,
+                -halfWidth + frameThick, halfHeight - frameThick, 0,
+                -halfWidth, halfHeight, 0
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            cellFrameBuffers.vertexPosition.itemSize = 3;
+            cellFrameBuffers.vertexPosition.numItems = 13;
+
+            cellFrameBuffers.colorFrameBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, cellFrameBuffers.colorFrameBuffer);
+
+            colors = [];
+
+            for (var i = 0; i < cellFrameBuffers.vertexPosition.numItems; i++) {
+                colors = colors.concat([1., 0., 0., 1.]);
+            }
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+            cellFrameBuffers.colorFrameBuffer.itemSize = 4;
+            cellFrameBuffers.colorFrameBuffer.numItems = cellFrameBuffers.vertexPosition.numItems;
         }
 
         function displayCells() {
-            var frustDimensions, cellWidth, cellHeight, cellsBB, i, j;
-            frustDimensions = spec.graphics.getFrustumDimension();
-            cellWidth = frustDimensions.width * 0.25;
-            if (cellWidth * spec.colCount > frustDimensions.width) {
-                cellWidth = frustDimensions.width / spec.colCount;
-            }
-
-            if ((cellWidth * 2 * spec.rowCount) > frustDimensions.height) {
-                cellWidth = frustDimensions.height / (2 * spec.rowCount);
-            }
-
-            cellHeight = cellWidth * 2;
+            var cellsBB, i, j;
+            
             cellsBB = {
                 width: spec.colCount * cellWidth,
                 height: spec.rowCount * cellHeight,
@@ -134,11 +304,13 @@ define(["cell"], function(cell) {
                     max: spec.rowCount * cellHeight / 2
                 }
             };
-            for (i = spec.rowCount-1; i >= 0; i--) {
+            for (i = spec.rowCount - 1; i >= 0; i--) {
                 for (j = 0; j < spec.colCount; j++) {
                     cells.push(cell({
-                        width: cellWidth,
-                        height: cellHeight,
+                        texShader : texShader,
+                        colShader : colShader,
+                        cellPageBuf: cellPageBuffers,
+                        cellFrameBuf: cellFrameBuffers,
                         pos: [
                             j * cellWidth + cellsBB.x.min + cellWidth / 2,
                             i * cellHeight + cellsBB.y.min + cellHeight / 2,
@@ -147,7 +319,7 @@ define(["cell"], function(cell) {
                         fontsTexture: fontsTexture,
                         graphics: spec.graphics,
                         currentFontIndex: 0,
-                        name: "Cell"+(spec.rowCount-i-1)+","+j
+                        name: "Cell" + (spec.rowCount - i - 1) + "," + j
                     }));
                 }
             }
@@ -161,7 +333,28 @@ define(["cell"], function(cell) {
             that = {};
             cells = [];
             gl = spec.graphics.gl;
+            frustDimensions = spec.graphics.getFrustumDimension();
+            
+            //cell dimensions
+            cellWidth = frustDimensions.width * 0.25;
+            
+            if (cellWidth * spec.colCount > frustDimensions.width) {
+                cellWidth = frustDimensions.width / spec.colCount;
+            }
+
+            if ((cellWidth * 2 * spec.rowCount) > frustDimensions.height) {
+                cellWidth = frustDimensions.height / (2 * spec.rowCount);
+            }
+            
+            cellHeight = cellWidth * 2;
+            wProportion = 0.9;
+            hProportion = 1 - (cellWidth * (1 - wProportion)) / cellHeight;
+            
             initFontsTexture();
+            initCellFrameBuffers();
+            initCellPageBuffers();
+            initColorShaders();
+            initTextureShaders();
             displayCells();
         }
         catch (e) {
@@ -172,11 +365,11 @@ define(["cell"], function(cell) {
          * Public interface
          */
 
-        function updateCell(r,c, ch) {
+        function updateCell(r, c, ch) {
             var i = r * spec.colCount + c, charCode = ch.toUpperCase().charCodeAt(0);
             if (i < cells.length) {
                 if (charCode > 47 && charCode < 58) {// 0 to 10
-                    cells[i].animate(charCode - 47, {angularSpeed: spec.speed}); 
+                    cells[i].animate(charCode - 47, {angularSpeed: spec.speed});
                 }
                 else if (charCode > 64 && charCode < 91) {
                     cells[i].animate(charCode - 54, {angularSpeed: spec.speed});

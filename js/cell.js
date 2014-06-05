@@ -17,182 +17,28 @@ define([
      */
     var cell = function(spec, my) {
 
+        //CONSTS
+        var PI2 = Math.PI * 2,
+            HALF_PI = Math.PI / 2;
+
+
         /*
          * Private members 
          */
-        var that = {}, texShader, vsTexShader, fsTexShader, colShader, vsColShader, fsColShader,vertexPositionBuffer, 
-                topUVBuffer, bottomUVBuffer, bottomInverUVBuffer, gl, lastTime, xRot, xRotPrev, PI2, halfPI, 
-                completeTurn, halfTurn, wProportion, hProportion, vertices, currentFontIndex, 
-                wantedFontIndex, angularSpeed, inBetweenSpace, vertexPositionBuffer2, colorFrameBuffer;
+        var that = {}, gl, lastTime, xRot, xRotPrev, completeTurn, halfTurn, currentFontIndex, wantedFontIndex, angularSpeed;
 
         my = my || {};
 
-        function compileShader(shader, str) {
-            gl.shaderSource(shader, str);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                throw gl.getShaderInfoLog(shader);
-            }
-        }
-
-        function initTextureShaders() {
-
-            vsTexShader = gl.createShader(gl.VERTEX_SHADER);
-            compileShader(vsTexShader, vsTexture);
-            fsTexShader = gl.createShader(gl.FRAGMENT_SHADER);
-            compileShader(fsTexShader, fsTexture);
-            texShader = gl.createProgram();
-            gl.attachShader(texShader, vsTexShader);
-            gl.attachShader(texShader, fsTexShader);
-            gl.linkProgram(texShader);
-            if (!gl.getProgramParameter(texShader, gl.LINK_STATUS)) {
-                
-                throw "Shader linking failed, could not initialise shaders\n" + gl.getProgramInfoLog(texShader);
-            }
-
-            gl.useProgram(texShader);
-            texShader.vertexPositionAttribute = gl.getAttribLocation(texShader, "aVertexPosition");
-            gl.enableVertexAttribArray(texShader.vertexPositionAttribute);
-
-            texShader.vertexUVsAttribute = gl.getAttribLocation(texShader, "aUV");
-            gl.enableVertexAttribArray(texShader.vertexUVsAttribute);
-
-            texShader.samplerUniform = gl.getUniformLocation(texShader, "uSampler");
-            texShader.pMatrixUniform = gl.getUniformLocation(texShader, "uPMatrix");
-            texShader.mvMatrixUniform = gl.getUniformLocation(texShader, "uMVMatrix");
-        }
-
-        function initColorShaders() {
-            vsColShader = gl.createShader(gl.VERTEX_SHADER);
-            compileShader(vsColShader, vsColor);
-            fsColShader = gl.createShader(gl.FRAGMENT_SHADER);
-            compileShader(fsColShader, fsColor);
-            colShader = gl.createProgram();
-            gl.attachShader(colShader, vsColShader);
-            gl.attachShader(colShader, fsColShader);
-            gl.linkProgram(colShader);
-            if (!gl.getProgramParameter(colShader, gl.LINK_STATUS)) {
-                throw "Shader linking failed, could not initialise shaders\n" + gl.getProgramInfoLog(colShader);
-            }
-
-            gl.useProgram(colShader);
-            colShader.vertexPositionAttribute = gl.getAttribLocation(colShader, "aVertexPosition");
-            gl.enableVertexAttribArray(colShader.vertexPositionAttribute);
-
-            colShader.vertexColorsAttribute = gl.getAttribLocation(colShader, "aVertexColor");
-            gl.enableVertexAttribArray(texShader.vertexColorsAttribute);
-
-            colShader.pMatrixUniform = gl.getUniformLocation(colShader, "uPMatrix");
-            colShader.mvMatrixUniform = gl.getUniformLocation(colShader, "uMVMatrix");
-        }
-
-        function initBuffers() {
-            var uvs, rightX, topY, halfWidth, halfHeight, frameThick, colors;
-
-            // buffer of vertex position for the page of a cell
-            vertexPositionBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-            inBetweenSpace = spec.height * 0.01;
-            rightX = spec.width * (wProportion) / 2;
-            topY = (spec.height * hProportion - inBetweenSpace) / 4; //divided by 4, because a page height is half a cell height
-            vertices = [
-                rightX, topY, 0,
-                -rightX, topY, 0,
-                rightX, -topY, 0,
-                -rightX, -topY, 0
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-            vertexPositionBuffer.itemSize = 3;
-            vertexPositionBuffer.numItems = 4;
-
-            vertexPositionBuffer2 = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer2);
-            
-            halfWidth = spec.width / 2;
-            halfHeight = spec.height / 2;
-            frameThick = spec.width/2 * (1 - wProportion);
-            
-            vertices = [
-                -halfWidth, halfHeight, 0,
-                -halfWidth + frameThick, halfHeight - frameThick, 0,
-                0, halfHeight, 0,
-                halfWidth - frameThick, halfHeight - frameThick, 0,
-                halfWidth, halfHeight, 0,
-                halfWidth - frameThick, 0, 0,
-                halfWidth, -halfHeight, 0,
-                halfWidth - frameThick, -halfHeight + frameThick, 0,
-                -halfWidth, -halfHeight, 0,
-                -halfWidth + frameThick, -halfHeight + frameThick, 0,
-                -halfWidth, 0, 0,
-                -halfWidth + frameThick, halfHeight - frameThick, 0,
-                -halfWidth, halfHeight, 0
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-            vertexPositionBuffer2.itemSize = 3;
-            vertexPositionBuffer2.numItems = 13;
-
-            colorFrameBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorFrameBuffer);
-
-            colors = [];
-
-            for (var i = 0; i < vertexPositionBuffer2.numItems; i++) {
-                colors = colors.concat([1., 0., 0., 1.]);
-            }
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-            colorFrameBuffer.itemSize = 4;
-            colorFrameBuffer.numItems = vertexPositionBuffer2.numItems;
-
-            // buffer for the uvs coordinate of the texture applied on the top page of a cell
-            topUVBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, topUVBuffer);
-            uvs = [
-                1.0, 1.0,
-                0.0, 1.0,
-                1.0, 0.5,
-                0.0, 0.5
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
-            topUVBuffer.itemSize = 2;
-            topUVBuffer.numItems = 4;
-
-            // buffer for the uvs coordinate of the texture applied on the bottom page of a cell
-            bottomUVBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, bottomUVBuffer);
-            uvs.splice(0);
-            uvs = [
-                1.0, 0.5,
-                0.0, 0.5,
-                1.0, 0.0,
-                0.0, 0.0
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
-            bottomUVBuffer.itemSize = 2;
-            bottomUVBuffer.numItems = 4;
-
-            // buffer for the uvs coordinate of the texture applied on the moving page when at bottom
-            bottomInverUVBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, bottomInverUVBuffer);
-            uvs.splice(0);
-            uvs = [
-                1.0, 0.0,
-                0.0, 0.0,
-                1.0, 0.5,
-                0.0, 0.5
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
-            bottomInverUVBuffer.itemSize = 2;
-            bottomInverUVBuffer.numItems = 4;
-
-        }
-
         function drawTop() {
 
-            var fontIndex = currentFontIndex === wantedFontIndex ? currentFontIndex : (currentFontIndex + 1) % spec.fontsTexture.length;
+            var fontIndex = currentFontIndex === wantedFontIndex ? currentFontIndex : (currentFontIndex + 1) % spec.fontsTexture.length,
+                    vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
+                    texShader = spec.texShader,
+                    topUVBuffer = spec.cellPageBuf.topUVBuffer;
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] + (spec.height * hProportion + inBetweenSpace) / 4, -spec.pos[2]]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] + spec.cellPageBuf.vTranslation, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(texShader.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -210,21 +56,25 @@ define([
         }
 
         function drawMoving() {
-            
-            var nextFontIndex = (currentFontIndex + 1) % spec.fontsTexture.length;
+
+            var nextFontIndex = (currentFontIndex + 1) % spec.fontsTexture.length,
+                    vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
+                    texShader = spec.texShader,
+                    topUVBuffer = spec.cellPageBuf.topUVBuffer,
+                    bottomInverUVBuffer = spec.cellPageBuf.bottomInverUVBuffer;
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
 
             spec.graphics.mvTranslate([spec.pos[0], spec.pos[1], -spec.pos[2]]);
             spec.graphics.mvRotate([1., 0., 0.], xRot);
-            spec.graphics.mvTranslate([0, (spec.height * hProportion + inBetweenSpace) / 4, 0]);
+            spec.graphics.mvTranslate([0, spec.cellPageBuf.vTranslation, 0]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(texShader.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
             gl.activeTexture(gl.TEXTURE0);
 
-            if (xRot < halfPI) {
+            if (xRot < HALF_PI) {
 
                 gl.bindTexture(gl.TEXTURE_2D, spec.fontsTexture[currentFontIndex]);
                 gl.uniform1i(texShader.samplerUniform, 0);
@@ -248,10 +98,13 @@ define([
         }
 
         function drawBottom() {
-            
+            var vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
+                    texShader = spec.texShader,
+                    bottomUVBuffer = spec.cellPageBuf.bottomUVBuffer;
+
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] - (spec.height * hProportion + inBetweenSpace) / 4, -spec.pos[2]]);
+            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] - spec.cellPageBuf.vTranslation, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
             gl.vertexAttribPointer(texShader.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -269,31 +122,34 @@ define([
         }
 
         function drawFrame() {
-            gl.useProgram(colShader);
+            var vertexPositionBuffer = spec.cellFrameBuf.vertexPosition,
+                    colorFrameBuffer = spec.cellFrameBuf.colorFrameBuffer,
+                    colShader = spec.colShader;
+
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
             spec.graphics.mvTranslate([spec.pos[0], spec.pos[1], -spec.pos[2]]);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer2);
-            gl.vertexAttribPointer(colShader.vertexPositionAttribute, vertexPositionBuffer2.itemSize, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+            gl.vertexAttribPointer(colShader.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, colorFrameBuffer);
             gl.vertexAttribPointer(colShader.vertexColorAttribute, colorFrameBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
             spec.graphics.applyTransforms(colShader);
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer2.numItems);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
             spec.graphics.mvMatrixPop();
         }
 
         function draw() {
-            gl.useProgram(texShader);
+            gl.useProgram(spec.texShader);
             drawTop();
             if (currentFontIndex !== wantedFontIndex) {
                 drawMoving();
             }
             drawBottom();
-            
-            gl.useProgram(colShader);
+
+            gl.useProgram(spec.colShader);
             drawFrame();
         }
 
@@ -324,7 +180,7 @@ define([
                         currentFontIndex = (currentFontIndex + 1) % spec.fontsTexture.length;
                     }
                 }
-                else if (xRot > halfPI && xRotPrev < halfPI) {
+                else if (xRot > HALF_PI && xRotPrev < HALF_PI) {
                     halfTurn = true;
                     xRotPrev = xRot;
                 }
@@ -338,22 +194,9 @@ define([
         try {
 
             // specs
-            spec.width = spec.width || spec.graphics.getFrustumDim().width * 0.25;
-            spec.height = spec.height || spec.width * 2;
             spec.pos = spec.pos || [0., 0., 0.];
             wantedFontIndex = currentFontIndex = spec.currentFontIndex || 0;
             gl = spec.graphics.gl;
-
-            // intern vars and states
-            PI2 = Math.PI * 2;
-            halfPI = Math.PI * 0.5;
-            wProportion = 0.9;
-            hProportion = 1 - (spec.width * (1 - wProportion)) / spec.height;
-
-            //init functions
-            initTextureShaders();
-            initColorShaders();
-            initBuffers();   //Buffers initialisation
 
             //render loop callbacks
             spec.graphics.addDraw(draw);
