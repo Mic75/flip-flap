@@ -17,10 +17,11 @@ and open the template in the editor.
         display: flex;
         flex-direction: row;
         justify-content: center;
-        height: 750px;
+        min-height: 600px;
       }
 
       section {
+        min-width: 400px;
         border: solid 3px grey;
         vertical-align: top;
         border-radius: 5px;
@@ -30,7 +31,7 @@ and open the template in the editor.
       }
       #split-flap {
         margin: auto;
-        width: 700px;
+        width: 500px;
       }
 
       #controls {
@@ -43,10 +44,18 @@ and open the template in the editor.
         border: none;
         width: 2em;
       }
-      
+
       #clock {
         font-size: 5em;
         margin: 0;
+      }
+      
+      #inputs input{
+        display: block;
+        width: 8em;
+        margin-bottom: 10px;
+        font-size: 2.8em;
+        letter-spacing: 0.1em;
       }
     </style>
   </head>
@@ -131,43 +140,68 @@ and open the template in the editor.
 //          }
 //
 //        }, false);
-        
+
         var $split_flap = $("#split-flap"),
-            row = 1, col = 8, speed = 5;
-        
-        function reset_split_flap (){
-          
+                row = 1, col = 8, speed = 5;
+
+        function reset_split_flap() {
+
           $split_flap.empty();
-          if (clock_animation !== null){
+          if (clock_animation !== null) {
             cancelAnimationFrame(clock_animation);
+            clock_animation = null;
+            $('#inputs').empty();
+            $('#inputs').append('<input type="text" maxlength="'+col+'">');
           }
-          split_flap.create($split_flap.get(0), {col: col, row: row, speed: speed, width: 700});
+          split_flap.create($split_flap.get(0), {col: col, row: row, speed: speed, width: 500});
+        }
+
+        function update_rows() {
+          $('#inputs').empty();
+          var $field = null;
+          for (var i=0; i < row ; i++)
+          {
+            $field = $('<input type="text" maxlength="'+col+'">');
+            $("#inputs").append($field);
+            bindAction($field);
+          }
         }
         
+        function update_inputs_length(){          
+          $("#inputs").find("input").val("");
+          $("#inputs").find("input").attr("maxlength",col);
+        }
+        
+        function bindAction($field) {
+          //todo
+        }
+
         var sliders = {
           row: {
-            min: 1, 
-            max: 10, 
-            value: row, 
+            min: 1,
+            max: 5,
+            value: row,
             slide: function(event, ui) {
               row = ui.value;
               reset_split_flap();
               $("#row").val(row);
+              update_rows();
             }
           },
           column: {
-            min: 1, 
-            max: 10, 
+            min: 1,
+            max: 10,
             value: col,
-            slide : function(event, ui) {
+            slide: function(event, ui) {
               col = ui.value;
               reset_split_flap();
               $("#column").val(col);
+              update_inputs_length();
             }
           },
           speed: {
-            min: 1, 
-            max: 10, 
+            min: 1,
+            max: 10,
             value: speed,
             slide: function(event, ui) {
               speed = ui.value;
@@ -187,26 +221,26 @@ and open the template in the editor.
               slide: sliders[id].slide
             });
           }
-          $("#"+id).val(sliders[id].value);
+          $("#" + id).val(sliders[id].value);
         }
 
         split_flap.create($split_flap.get(0), {
           col: col,
           row: row,
           speed: speed,
-          width: 700});
+          width: 500});
 
         var started = true,
                 clock_animation = null,
                 elapsed = 0;
-        
+
         function update_clocks() {
           var time_text = new Date(Date.now()).toLocaleTimeString('fr-FR'),
-              i = null;
-                      
-          for (i=0; i < time_text.length;i++){
+                  i = null;
+
+          for (i = 0; i < time_text.length; i++) {
             if (time_text[i] !== ':') {
-              split_flap.set( 0,i,time_text[i], {numeric: true} );
+              split_flap.set(0, i, time_text[i], {numeric: true});
             }
           }
           $("#clock").text(time_text);
