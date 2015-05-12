@@ -11,7 +11,7 @@ A similar project has been developed by Spite and is described [here](http://www
 
 Constraints
 --
-- Use pure __webGL__ API (no frameworks such as Three.js) to become familiar with it
+- Use pure __webGL__ API (no frameworks such as Three.js) to become familiar with it !
 - Use __requireJS__ to modularize the project
 - Use Douglas Crockford's _Functional Inheritance_ pattern to test it
 - bonus1 : use the common _Prototypal Inheritance_ pattern and compare code and perfs with the functional one
