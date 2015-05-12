@@ -131,57 +131,98 @@ and open the template in the editor.
 //          }
 //
 //        }, false);
-
-        var conf = {
-          row: {min: 1, max: 10, value: 1},
-          column: {min: 1, max: 10, value: 8},
-          speed: {min: 1, max: 20, value: 5}
+        
+        var $split_flap = $("#split-flap"),
+            row = 1, col = 8, speed = 5;
+        
+        function reset_split_flap (){
+          
+          $split_flap.empty();
+          if (clock_animation !== null){
+            cancelAnimationFrame(clock_animation);
+          }
+          split_flap.create($split_flap.get(0), {col: col, row: row, speed: speed, width: 700});
+        }
+        
+        var sliders = {
+          row: {
+            min: 1, 
+            max: 10, 
+            value: row, 
+            slide: function(event, ui) {
+              row = ui.value;
+              reset_split_flap();
+              $("#row").val(row);
+            }
+          },
+          column: {
+            min: 1, 
+            max: 10, 
+            value: col,
+            slide : function(event, ui) {
+              col = ui.value;
+              reset_split_flap();
+              $("#column").val(col);
+            }
+          },
+          speed: {
+            min: 1, 
+            max: 10, 
+            value: speed,
+            slide: function(event, ui) {
+              speed = ui.value;
+              split_flap.setSpeed(speed);
+              $("#speed").val(ui.value);
+            }
+          }
         };
 
-        for (var id in conf) {
-          if (conf.hasOwnProperty(id)) {
+        for (var id in sliders) {
+          if (sliders.hasOwnProperty(id)) {
             $("#slider-" + id).slider({
               range: "max",
-              min: conf[id].min,
-              max: conf[id].max,
-              value: conf[id].value,
-              slide: (function(id) {
-                return function(event, ui) {
-                  $("#" + id).val(ui.value);
-                };
-              })(id)
+              min: sliders[id].min,
+              max: sliders[id].max,
+              value: sliders[id].value,
+              slide: sliders[id].slide
             });
-            $("#" + id).val($("#slider-" + id).slider("value"));
           }
+          $("#"+id).val(sliders[id].value);
         }
 
-        split_flap.create($("#split-flap").get(0), {
-          col: conf.column.value,
-          row: conf.column.row,
-          speed: conf.column.speed,
+        split_flap.create($split_flap.get(0), {
+          col: col,
+          row: row,
+          speed: speed,
           width: 700});
 
         var started = true,
-                animation_id = null,
+                clock_animation = null,
                 elapsed = 0;
-
-        function update_clock() {
-          var current_date = new Date(Date.now()),
-                  seconds = current_date.getSeconds() > 9 ? current_date.getSeconds() : "0" + current_date.getSeconds();
-          $("#clock").text(current_date.getHours() + ":" + current_date.getMinutes() + ":" + seconds);
+        
+        function update_clocks() {
+          var time_text = new Date(Date.now()).toLocaleTimeString('fr-FR'),
+              i = null;
+                      
+          for (i=0; i < time_text.length;i++){
+            if (time_text[i] !== ':') {
+              split_flap.set( 0,i,time_text[i], {numeric: true} );
+            }
+          }
+          $("#clock").text(time_text);
         }
 
         function tick() {
           if (Date.now() - elapsed > 1000) {
-            update_clock();
+            update_clocks();
             elapsed = Date.now();
           }
 
           if (started) {
-            requestAnimationFrame(tick);
+            clock_animation = requestAnimationFrame(tick);
           }
         }
-        animation_id = requestAnimationFrame(tick);
+        clock_animation = requestAnimationFrame(tick);
 
 
       });
