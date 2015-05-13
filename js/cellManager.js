@@ -387,6 +387,7 @@ define(["text!../shaders/fsTexture.glsl",
         
         function setSpeed(s){
           var i = null, count = cells.length;
+          speed = s;
           for (i=0; i < count ; i++){
             cells[i].setSpeed(s);
           }

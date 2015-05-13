@@ -147,11 +147,14 @@ and open the template in the editor.
         function reset_split_flap() {
 
           $split_flap.empty();
+          var $field = null;
           if (clock_animation !== null) {
             cancelAnimationFrame(clock_animation);
             clock_animation = null;
             $('#inputs').empty();
-            $('#inputs').append('<input type="text" maxlength="'+col+'">');
+            $field = $('<input type="text" data-row="0" maxlength="'+col+'">');
+            $('#inputs').append($field);
+            bindAction($field);
           }
           split_flap.create($split_flap.get(0), {col: col, row: row, speed: speed, width: 500});
         }
@@ -161,7 +164,7 @@ and open the template in the editor.
           var $field = null;
           for (var i=0; i < row ; i++)
           {
-            $field = $('<input type="text" maxlength="'+col+'">');
+            $field = $('<input type="text" data-row="'+i+'" maxlength="'+col+'">');
             $("#inputs").append($field);
             bindAction($field);
           }
@@ -173,7 +176,11 @@ and open the template in the editor.
         }
         
         function bindAction($field) {
-          //todo
+          $field.change(function(e){
+            for (var j = 0; j < col; j++) {
+                  split_flap.set(parseInt($(this).attr("data-row")), j, e.target.value.charAt(j));
+            }
+          });
         }
 
         var sliders = {
@@ -201,7 +208,7 @@ and open the template in the editor.
           },
           speed: {
             min: 1,
-            max: 10,
+            max: 20,
             value: speed,
             slide: function(event, ui) {
               speed = ui.value;
