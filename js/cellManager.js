@@ -14,7 +14,7 @@ define(["text!../shaders/fsTexture.glsl",
          * Private Members
          */
         var that, cells, fontsTexture, gl, texShader, colShader, cellPageBuffers, cellFrameBuffers,
-                frustDimensions, cellWidth, cellHeight, wProportion, hProportion;
+                frustDimensions, cellWidth, cellHeight, wProportion, hProportion, speed;
         my = my || {};
         function measureCharHeight(fontStyle, width, height, ch) {
 
@@ -333,6 +333,7 @@ define(["text!../shaders/fsTexture.glsl",
             that = {};
             cells = [];
             gl = spec.graphics.gl;
+            speed = spec.speed || 0.5;
             frustDimensions = spec.graphics.getFrustumDimension();
             
             //cell dimensions
@@ -364,15 +365,18 @@ define(["text!../shaders/fsTexture.glsl",
         /*
          * Public interface
          */
-
-        function updateCell(r, c, ch) {
-            var i = r * spec.colCount + c, charCode = ch.toUpperCase().charCodeAt(0);
-            if (i < cells.length) {
+        
+        function updateCell(r, c, ch, options) {
+            var i = r * spec.colCount + c, charCode = ch.toUpperCase().charCodeAt(0),
+                options = options || {};
+                options.angularSpeed = speed;
+            
+          if (i < cells.length) {
                 if (charCode > 47 && charCode < 58) {// 0 to 10
-                    cells[i].animate(charCode - 47, {angularSpeed: spec.speed});
+                    cells[i].animate(charCode - 47, options);
                 }
                 else if (charCode > 64 && charCode < 91) {
-                    cells[i].animate(charCode - 54, {angularSpeed: spec.speed});
+                    cells[i].animate(charCode - 54, options);
                 }
             }
             else {
@@ -380,6 +384,16 @@ define(["text!../shaders/fsTexture.glsl",
             }
         }
         that.updateCell = updateCell;
+        
+        function setSpeed(s){
+          var i = null, count = cells.length;
+          speed = s;
+          for (i=0; i < count ; i++){
+            cells[i].setSpeed(s);
+          }
+        }
+        that.setSpeed = setSpeed;
+        
         /*
          * Test interface
          */

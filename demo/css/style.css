@@ -1,0 +1,47 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto+Condensed:700,400);
+
+.wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  min-height: 600px;
+}
+
+section {
+  min-width: 400px;
+  border: solid 3px grey;
+  vertical-align: top;
+  border-radius: 5px;
+  padding: 20px;
+  margin: 10px 5px 0 0;
+  font: 700 1em "Roboto", sans-serif;
+}
+#split-flap {
+  margin: auto;
+  width: 500px;
+}
+
+#controls {
+  width: 300px;
+  margin:auto;
+  text-align: center;
+}
+
+#controls input {
+  border: none;
+  width: 2em;
+}
+
+#clock {
+  font-size: 5em;
+  margin: 0;
+}
+
+#inputs input{
+  display: block;
+  width: 8em;
+  margin-bottom: 10px;
+  font-size: 2.8em;
+  letter-spacing: 0.1em;
+}
+

@@ -43,10 +43,14 @@ define(["graphics", "cellManager"], function(graphics, cellManager) {
          * @param {type} r
          * @param {type} c
          * @param {type} ch
+         * @param {type} options
          * @returns {undefined}
          */
-        set: function(r,c,ch){
-            manager.updateCell(r,c,ch);
+        set: function(r,c,ch,options){
+            manager.updateCell(r,c,ch,options);
+        },
+        setSpeed: function(speed){
+          manager.setSpeed(speed);
         }
     };
 
