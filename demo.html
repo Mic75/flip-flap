@@ -1,12 +1,7 @@
 <!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
 <html>
   <head>
-    <title>Split-flap test page</title>
+    <title>Demo split-flap display</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/jquery-ui.css">
@@ -99,50 +94,8 @@ and open the template in the editor.
       });
 
       require(["split-flap", "jquery", "jquery-ui"], function(split_flap, $) {
-
-//        var button = document.getElementById("generate");
-//        button.addEventListener("click", function() {
-//          var col, row, i, speed, inputsDiv, container, j;
-//
-//          function getValue(name, defaultVal) {
-//            var val = parseFloat(document.getElementById(name).value);
-//            return (isNaN(val) ? defaultVal : val);
-//          }
-//
-//          col = getValue("col", 6);
-//          row = getValue("row", 3);
-//          speed = getValue("speed", 20);
-//
-//          container = document.createElement("div");
-//          document.body.appendChild(container);
-//
-//          //create the split-flap display
-//          splitFlap.create(container, {col: col, row: row, speed: speed});
-//
-//          //add the input field to manipulate the split-flap
-//          inputsDiv = document.createElement("div");
-//          for (i = 0; i < row; i++) {
-//            var fieldContainer = document.createElement("p");
-//            var inputField = document.createElement("input");
-//            inputField.type = "text";
-//
-//            (function(i) {
-//              inputField.addEventListener("change", function(e) {
-//                for (j = 0; j < col; j++) {
-//                  splitFlap.set(i, j, e.target.value.charAt(j));
-//                }
-//              }, false);
-//            })(i);
-//
-//            fieldContainer.appendChild(inputField);
-//            inputsDiv.appendChild(fieldContainer);
-//            document.body.appendChild(inputsDiv);
-//          }
-//
-//        }, false);
-
         var $split_flap = $("#split-flap"),
-                row = 1, col = 8, speed = 5;
+                row = 1, col = 8, speed = 20;
 
         function reset_split_flap() {
 
