@@ -10,6 +10,7 @@ This is a totally personal project to practice and apply what I learnt from [lea
 
 A similar project has been developed by Spite and is described [here](http://www.clicktorelease.com/blog/split-flap-display "ClickToRelease"). Nevertheless, this project is based on CSS3D and is not related to mine.
 
+Try the [demo]({{ site.baseurl }}/demo/demo.html)
 
 Constraints
 --
