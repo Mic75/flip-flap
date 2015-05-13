@@ -1,6 +1,6 @@
 ---
 ---
-splip-flap
+Split-flap display
 =========
 
 Description
