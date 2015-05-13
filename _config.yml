@@ -1,5 +1,3 @@
-basesite: /slip-flap
-
 defaults:
   -
     scope:
