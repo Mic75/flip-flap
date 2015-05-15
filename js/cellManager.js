@@ -13,8 +13,8 @@ define(["text!../shaders/fsTexture.glsl",
         /*
          * Private Members
          */
-        var that, cells, fontsTexture, gl, texShader, colShader, cellPageBuffers, cellFrameBuffers,
-                frustDimensions, cellWidth, cellHeight, wProportion, hProportion, speed;
+        var that, cells, fontsTexture, gl, texShader, colShader, cellPageBuffers, frustDimensions, cellWidth, 
+            cellHeight, wProportion, hProportion, speed;
         my = my || {};
         function measureCharHeight(fontStyle, width, height, ch) {
 
@@ -246,49 +246,6 @@ define(["text!../shaders/fsTexture.glsl",
             cellPageBuffers.bottomInverUVBuffer.numItems = 4;
         }
         
-        function initCellFrameBuffers() {
-            var halfWidth, halfHeight, frameThick, colors, vertices;
-            
-            cellFrameBuffers = {};
-            cellFrameBuffers.vertexPosition = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, cellFrameBuffers.vertexPosition);
-
-            halfWidth = cellWidth / 2;
-            halfHeight = cellHeight / 2;
-            frameThick = halfWidth * (1 - wProportion);
-
-            vertices = [
-                -halfWidth, halfHeight, 0,
-                -halfWidth + frameThick, halfHeight - frameThick, 0,
-                0, halfHeight, 0,
-                halfWidth - frameThick, halfHeight - frameThick, 0,
-                halfWidth, halfHeight, 0,
-                halfWidth - frameThick, 0, 0,
-                halfWidth, -halfHeight, 0,
-                halfWidth - frameThick, -halfHeight + frameThick, 0,
-                -halfWidth, -halfHeight, 0,
-                -halfWidth + frameThick, -halfHeight + frameThick, 0,
-                -halfWidth, 0, 0,
-                -halfWidth + frameThick, halfHeight - frameThick, 0,
-                -halfWidth, halfHeight, 0
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-            cellFrameBuffers.vertexPosition.itemSize = 3;
-            cellFrameBuffers.vertexPosition.numItems = 13;
-
-            cellFrameBuffers.colorFrameBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, cellFrameBuffers.colorFrameBuffer);
-
-            colors = [];
-
-            for (var i = 0; i < cellFrameBuffers.vertexPosition.numItems; i++) {
-                colors = colors.concat([1., 0., 0., 1.]);
-            }
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-            cellFrameBuffers.colorFrameBuffer.itemSize = 4;
-            cellFrameBuffers.colorFrameBuffer.numItems = cellFrameBuffers.vertexPosition.numItems;
-        }
-
         function displayCells() {
             var cellsBB, i, j;
             
@@ -310,7 +267,6 @@ define(["text!../shaders/fsTexture.glsl",
                         texShader : texShader,
                         colShader : colShader,
                         cellPageBuf: cellPageBuffers,
-                        cellFrameBuf: cellFrameBuffers,
                         pos: [
                             j * cellWidth + cellsBB.x.min + cellWidth / 2,
                             i * cellHeight + cellsBB.y.min + cellHeight / 2,
@@ -352,7 +308,6 @@ define(["text!../shaders/fsTexture.glsl",
             hProportion = 1 - (cellWidth * (1 - wProportion)) / cellHeight;
             
             initFontsTexture();
-            initCellFrameBuffers();
             initCellPageBuffers();
             initColorShaders();
             initTextureShaders();
