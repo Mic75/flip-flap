@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Demo split-flap display</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/jquery-ui.css">
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <div class="wrapper">
+      <section id="3d-view">
+        <div id="split-flap"></div>
+        <div id="controls">
+          <div>
+            <label for="row">Row: </label>
+            <input type="text" id="row" readonly>
+            <div id="slider-row"></div>
+          </div>
+          <div>
+            <label for="column">Column: </label>
+            <input type="text" id="column" readonly>
+            <div id="slider-column"></div>
+          </div>
+          <div>
+            <label for="speed">Speed: </label>
+            <input type="text" id="speed" readonly>
+            <div id="slider-speed"></div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div>
+          <h1>Inputs:</h1>
+          <div id="inputs">
+            <p id="clock"></p>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script data-main="demo" src="../js/libs/require.js"></script>
+  </body>
+</html>

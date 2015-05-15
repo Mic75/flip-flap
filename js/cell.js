@@ -25,7 +25,8 @@ define([
         /*
          * Private members 
          */
-        var that = {}, gl, lastTime, xRot, xRotPrev, completeTurn, halfTurn, currentFontIndex, wantedFontIndex, angularSpeed;
+        var that = {}, gl, lastTime, xRot, xRotPrev, completeTurn, halfTurn, currentFontIndex, wantedFontIndex, 
+                angularSpeed, numeric;
 
         my = my || {};
 
@@ -177,7 +178,8 @@ define([
                         spec.graphics.removeUpdate(spec.name);
                     }
                     else {
-                        currentFontIndex = (currentFontIndex + 1) % spec.fontsTexture.length;
+                        var maxIndexAllowed = numeric === true ? 10 : spec.fontsTexture.length;
+                        currentFontIndex = (currentFontIndex + 1) % maxIndexAllowed;
                     }
                 }
                 else if (xRot > HALF_PI && xRotPrev < HALF_PI) {
@@ -226,6 +228,7 @@ define([
                 xRot = 0.1;
                 xRotPrev = 0;
                 angularSpeed = options.angularSpeed || 0.5;
+                numeric = options.numeric || false;
                 spec.graphics.addUpdate(spec.name, update);
             }
             else {
@@ -234,7 +237,12 @@ define([
 
         }
         that.animate = animate;
-
+        
+        function setSpeed(s){
+          angularSpeed = s;
+        }
+        that.setSpeed = setSpeed;
+        
         return that;
     };
     return cell;
