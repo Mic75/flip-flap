@@ -31,11 +31,11 @@ define([
         my = my || {};
 
         function drawTop() {
-
-            var fontIndex = currentFontIndex === wantedFontIndex ? currentFontIndex : (currentFontIndex + 1) % spec.fontsTexture.length,
-                    vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
-                    texShader = spec.texShader,
-                    topUVBuffer = spec.cellPageBuf.topUVBuffer;
+            var maxIndexAllowed = numeric === true ? 11 : spec.fontsTexture.length,
+              fontIndex = currentFontIndex === wantedFontIndex ? currentFontIndex : (currentFontIndex + 1) % maxIndexAllowed,
+              vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
+              texShader = spec.texShader,
+              topUVBuffer = spec.cellPageBuf.topUVBuffer;
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
@@ -57,12 +57,12 @@ define([
         }
 
         function drawMoving() {
-
-            var nextFontIndex = (currentFontIndex + 1) % spec.fontsTexture.length,
-                    vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
-                    texShader = spec.texShader,
-                    topUVBuffer = spec.cellPageBuf.topUVBuffer,
-                    bottomInverUVBuffer = spec.cellPageBuf.bottomInverUVBuffer;
+            var maxIndexAllowed = numeric === true ? 11 : spec.fontsTexture.length,
+              nextFontIndex = (currentFontIndex + 1) % maxIndexAllowed,
+              vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
+              texShader = spec.texShader,
+              topUVBuffer = spec.cellPageBuf.topUVBuffer,
+              bottomInverUVBuffer = spec.cellPageBuf.bottomInverUVBuffer;
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
@@ -122,26 +122,6 @@ define([
             spec.graphics.mvMatrixPop();
         }
 
-        function drawFrame() {
-            var vertexPositionBuffer = spec.cellFrameBuf.vertexPosition,
-                    colorFrameBuffer = spec.cellFrameBuf.colorFrameBuffer,
-                    colShader = spec.colShader;
-
-            spec.graphics.mvMatrixPush();
-            spec.graphics.mvMatrixToIdentity();
-            spec.graphics.mvTranslate([spec.pos[0], spec.pos[1], -spec.pos[2]]);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-            gl.vertexAttribPointer(colShader.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorFrameBuffer);
-            gl.vertexAttribPointer(colShader.vertexColorAttribute, colorFrameBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-            spec.graphics.applyTransforms(colShader);
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numItems);
-            spec.graphics.mvMatrixPop();
-        }
-
         function draw() {
             gl.useProgram(spec.texShader);
             drawTop();
@@ -151,7 +131,6 @@ define([
             drawBottom();
 
             gl.useProgram(spec.colShader);
-            drawFrame();
         }
 
         function updateDebug() {
@@ -178,7 +157,7 @@ define([
                         spec.graphics.removeUpdate(spec.name);
                     }
                     else {
-                        var maxIndexAllowed = numeric === true ? 10 : spec.fontsTexture.length;
+                        var maxIndexAllowed = numeric === true ? 11 : spec.fontsTexture.length;
                         currentFontIndex = (currentFontIndex + 1) % maxIndexAllowed;
                     }
                 }

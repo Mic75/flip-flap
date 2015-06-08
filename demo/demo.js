@@ -108,7 +108,7 @@ require(["split-flap", "jquery", "libs/jquery-ui"], function(split_flap, $) {
           elapsed = 0;
 
   function update_clocks() {
-    var time_text = new Date(Date.now()).toLocaleTimeString('fr-FR'),
+    var time_text = /(\d\d:?){3}/.exec(new Date(Date.now()).toUTCString())[0],
             i = null;
 
     for (i = 0; i < time_text.length; i++) {
