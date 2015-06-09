@@ -9,34 +9,42 @@
   </head>
   <body>
     <div class="wrapper">
-      <section id="3d-view">
-        <div id="split-flap"></div>
-        <div id="controls">
+      <div class="instructions">
+        <p>Move the cursors to select the number of rows, colums and the speed you want
+          for a the cells of the slip flap displays.</p>
+        <p>Each generated field on the right section correspond to a row</p>
+        <p>Once satisfied with the settings, fill in the input field that just appeared and press enter.</p>        
+      </div>
+      <div>
+        <section id="3d-view">
+          <div id="split-flap"></div>
+          <div id="controls">
+            <div>
+              <label for="row">Row: </label>
+              <input type="text" id="row" readonly>
+              <div id="slider-row"></div>
+            </div>
+            <div>
+              <label for="column">Column: </label>
+              <input type="text" id="column" readonly>
+              <div id="slider-column"></div>
+            </div>
+            <div>
+              <label for="speed">Speed: </label>
+              <input type="text" id="speed" readonly>
+              <div id="slider-speed"></div>
+            </div>
+          </div>
+        </section>
+        <section>
           <div>
-            <label for="row">Row: </label>
-            <input type="text" id="row" readonly>
-            <div id="slider-row"></div>
+            <h1>Inputs:</h1>
+            <div id="inputs">
+              <p id="clock"></p>
+            </div>
           </div>
-          <div>
-            <label for="column">Column: </label>
-            <input type="text" id="column" readonly>
-            <div id="slider-column"></div>
-          </div>
-          <div>
-            <label for="speed">Speed: </label>
-            <input type="text" id="speed" readonly>
-            <div id="slider-speed"></div>
-          </div>
-        </div>
-      </section>
-      <section>
-        <div>
-          <h1>Inputs:</h1>
-          <div id="inputs">
-            <p id="clock"></p>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>     
     </div>
     <script data-main="demo" src="../js/libs/require.js"></script>
   </body>
