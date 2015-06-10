@@ -39,6 +39,7 @@ define([
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
+            spec.graphics.camTransform();
             spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] + spec.cellPageBuf.vTranslation, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
@@ -58,15 +59,15 @@ define([
 
         function drawMoving() {
             var maxIndexAllowed = numeric === true ? 11 : spec.fontsTexture.length,
-              nextFontIndex = (currentFontIndex + 1) % maxIndexAllowed,
-              vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
-              texShader = spec.texShader,
-              topUVBuffer = spec.cellPageBuf.topUVBuffer,
-              bottomInverUVBuffer = spec.cellPageBuf.bottomInverUVBuffer;
+                nextFontIndex = (currentFontIndex + 1) % maxIndexAllowed,
+                vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
+                texShader = spec.texShader,
+                topUVBuffer = spec.cellPageBuf.topUVBuffer,
+                bottomInverUVBuffer = spec.cellPageBuf.bottomInverUVBuffer;
 
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
-
+            spec.graphics.camTransform();
             spec.graphics.mvTranslate([spec.pos[0], spec.pos[1], -spec.pos[2]]);
             spec.graphics.mvRotate([1., 0., 0.], xRot);
             spec.graphics.mvTranslate([0, spec.cellPageBuf.vTranslation, 0]);
@@ -100,11 +101,11 @@ define([
 
         function drawBottom() {
             var vertexPositionBuffer = spec.cellPageBuf.vertexPosition,
-                    texShader = spec.texShader,
-                    bottomUVBuffer = spec.cellPageBuf.bottomUVBuffer;
-
+                texShader = spec.texShader,
+                bottomUVBuffer = spec.cellPageBuf.bottomUVBuffer;            
             spec.graphics.mvMatrixPush();
             spec.graphics.mvMatrixToIdentity();
+            spec.graphics.camTransform();
             spec.graphics.mvTranslate([spec.pos[0], spec.pos[1] - spec.cellPageBuf.vTranslation, -spec.pos[2]]);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
@@ -123,14 +124,11 @@ define([
         }
 
         function draw() {
-            gl.useProgram(spec.texShader);
             drawTop();
             if (currentFontIndex !== wantedFontIndex) {
                 drawMoving();
             }
             drawBottom();
-
-            gl.useProgram(spec.colShader);
         }
 
         function updateDebug() {

@@ -19,7 +19,9 @@ define(["glmatrix"], function(glMatrix) {
         /*
          * Private members 
          */
-        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], updateList={}, aspectRatio;
+        var that = {}, gl, pMatrix, mvMatrix, mvMatrixStack, drawList=[], updateList={}, aspectRatio, rotCam=0,
+            Q_PI = Math.PI / 4, latestTime = null, rotFactor = 0,
+            rotSinParam = Q_PI/1000; 
         my = my || {};
 
         /*
@@ -52,22 +54,27 @@ define(["glmatrix"], function(glMatrix) {
                 throw e;
             }
         }
-
+        
         function drawScene() {
             var i, drawsCount = drawList.length;
 
             gl.viewport(0, 0, gl.viewportW, gl.viewportH);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
             //synchronous call to avoid concurrent access on mvMatrix
             for (i = 0; i < drawsCount; i++) {
                 drawList[i]();
             }
         }
-
         
+        function rotateCam(){
+          var currentTime = new Date().getTime();
+          rotCam = Math.sin(rotFactor)*(Math.PI/6);
+          rotFactor += rotSinParam*(currentTime - latestTime);
+          latestTime = currentTime;
+        }
+      
         function update() {
-
+            rotateCam();
             for(var id in updateList){
                 if (updateList.hasOwnProperty(id)){
                     updateList[id]();
@@ -92,6 +99,7 @@ define(["glmatrix"], function(glMatrix) {
         function run() {
             gl.clearColor(.35, .35, .35, 1.0);
             gl.enable(gl.DEPTH_TEST);
+            latestTime = new Date().getTime();
             render();
         }
         that.run = run;
@@ -208,6 +216,13 @@ define(["glmatrix"], function(glMatrix) {
             return typeof updateList[name] !== "undefined";
         }
         that.registeredUpdate = registeredUpdate;
+        
+        function camTransform(){
+          mvTranslate([0.,0., -spec.depth/2]);
+          mvRotate([0.,1.,0.], rotCam);
+          mvTranslate([0.,0., spec.depth/2]);
+        }
+        that.camTransform = camTransform;
         
         return that;
 
