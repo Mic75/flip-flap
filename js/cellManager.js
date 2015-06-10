@@ -16,6 +16,7 @@ define(["text!../shaders/fsTexture.glsl",
         var that, cells, fontsTexture, gl, texShader, colShader, cellPageBuffers, frustDimensions, cellWidth, 
             cellHeight, wProportion, hProportion, speed;
         my = my || {};
+        
         function measureCharHeight(fontStyle, width, height, ch) {
 
             // create a temp canvas
@@ -151,34 +152,6 @@ define(["text!../shaders/fsTexture.glsl",
             texShader.pMatrixUniform = gl.getUniformLocation(texShader, "uPMatrix");
             texShader.mvMatrixUniform = gl.getUniformLocation(texShader, "uMVMatrix");
         }
-
-        function initColorShaders() {
-            var fsShader, vsShader;
-            
-            vsShader = gl.createShader(gl.VERTEX_SHADER);
-            compileShader(vsShader, vsColor);
-            
-            fsShader = gl.createShader(gl.FRAGMENT_SHADER);
-            compileShader(fsShader, fsColor);
-            
-            colShader = gl.createProgram();
-            gl.attachShader(colShader, vsShader);
-            gl.attachShader(colShader, fsShader);
-            gl.linkProgram(colShader);
-            if (!gl.getProgramParameter(colShader, gl.LINK_STATUS)) {
-                throw "Shader linking failed, could not initialise shaders\n" + gl.getProgramInfoLog(colShader);
-            }
-
-            gl.useProgram(colShader);
-            colShader.vertexPositionAttribute = gl.getAttribLocation(colShader, "aVertexPosition");
-            gl.enableVertexAttribArray(colShader.vertexPositionAttribute);
-
-            colShader.vertexColorsAttribute = gl.getAttribLocation(colShader, "aVertexColor");
-            gl.enableVertexAttribArray(colShader.vertexColorsAttribute);
-
-            colShader.pMatrixUniform = gl.getUniformLocation(colShader, "uPMatrix");
-            colShader.mvMatrixUniform = gl.getUniformLocation(colShader, "uMVMatrix");
-        }
         
         function initCellPageBuffers() {
             var rightX, topY, uvs, vertices;
@@ -309,7 +282,6 @@ define(["text!../shaders/fsTexture.glsl",
             
             initFontsTexture();
             initCellPageBuffers();
-            initColorShaders();
             initTextureShaders();
             displayCells();
         }
