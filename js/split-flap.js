@@ -3,7 +3,7 @@
  */
 define(["graphics", "cellManager"], function(graphics, cellManager) {
 
-    var manager;
+    var manager, graphics3D;
     
     /**
      * 
@@ -20,23 +20,33 @@ define(["graphics", "cellManager"], function(graphics, cellManager) {
             try {
                 options = options || {};
                 var width = options.width || 500,
-                        height = options.height || 500,
-                        speed = options.speed || 10,
-                        col = options.col || 1,
-                        row = options.row || 1,
-                        graphics3D = null,
-                        canvas = document.createElement("canvas");
+                    height = options.height || 500,
+                    speed = options.speed || 10,
+                    col = options.col || 1,
+                    row = options.row || 1,
+                    canvas = document.createElement("canvas");
 
                 canvas.width = width;
                 canvas.height = height;
                 container.appendChild(canvas);
                 graphics3D = graphics({canvas: canvas});
                 manager = cellManager({rowCount: row, colCount: col, graphics: graphics3D, speed: speed});
-                graphics3D.run();
+                
             }
             catch(e){
                 console.error(e.message);
             }
+        },
+        display: function(type){
+          type = type || "array";
+          
+          if (type === "array"){
+            manager.displayCells();
+          }
+          else if( type === "clock"){
+            manager.displayClock();
+          }
+          graphics3D.run();
         },
         /**
          * 
